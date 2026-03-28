@@ -1,0 +1,1692 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Journal Intelligent v2</title>
+<meta name="description" content="Journal quotidien intelligent orienté santé, habitudes et analyse personnelle">
+<meta name="theme-color" content="#2d5016">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f0e8;
+  --bg2: #ece5d8;
+  --bg3: #e2d9ca;
+  --surface: #ffffff;
+  --surface2: #faf8f4;
+  --text: #2a2318;
+  --text2: #6b5d4d;
+  --text3: #9a8b78;
+  --accent: #4a7c2e;
+  --accent2: #6ba342;
+  --accent-light: #e8f2de;
+  --coral: #d4654a;
+  --coral-light: #fce8e3;
+  --gold: #c49b2a;
+  --gold-light: #fdf3d7;
+  --blue: #3a7ca5;
+  --blue-light: #dff0fa;
+  --purple: #7c5cbf;
+  --purple-light: #ede5fa;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-xs: 6px;
+  --shadow: 0 2px 12px rgba(42,35,24,0.06);
+  --shadow-lg: 0 8px 32px rgba(42,35,24,0.1);
+  --font: 'DM Sans', -apple-system, sans-serif;
+  --font-display: 'DM Serif Display', Georgia, serif;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --nav-h: 64px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html { font-size:16px; -webkit-tap-highlight-color:transparent; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  padding-top: var(--safe-top);
+  padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + 8px);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-thumb { background:var(--bg3); border-radius:4px; }
+
+/* Typography */
+h1 { font-family:var(--font-display); font-size:1.75rem; color:var(--text); font-weight:400; }
+h2 { font-family:var(--font-display); font-size:1.35rem; color:var(--text); font-weight:400; }
+h3 { font-size:0.95rem; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:0.05em; }
+
+/* Page container */
+.page { display:none; padding:20px 16px; animation:fadeIn .3s ease; }
+.page.active { display:block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+/* Header */
+.page-header {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:20px; padding:4px 0;
+}
+.page-header h1 { line-height:1.2; }
+.header-actions { display:flex; gap:8px; }
+
+/* Cards */
+.card {
+  background:var(--surface);
+  border-radius:var(--radius);
+  padding:18px;
+  margin-bottom:14px;
+  box-shadow:var(--shadow);
+  border:1px solid rgba(42,35,24,0.04);
+}
+.card-title {
+  font-size:0.8rem; font-weight:600; text-transform:uppercase;
+  letter-spacing:0.06em; color:var(--text3); margin-bottom:12px;
+  display:flex; align-items:center; gap:8px;
+}
+.card-title svg { width:16px; height:16px; opacity:.6; }
+
+/* Summary Tiles */
+.tiles { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+.tile {
+  background:var(--surface);
+  border-radius:var(--radius-sm);
+  padding:14px;
+  box-shadow:var(--shadow);
+  border:1px solid rgba(42,35,24,0.04);
+  text-align:center;
+  transition:transform .15s;
+}
+.tile:active { transform:scale(.97); }
+.tile-icon { font-size:1.5rem; margin-bottom:6px; }
+.tile-value { font-family:var(--font-display); font-size:1.6rem; color:var(--text); line-height:1; }
+.tile-label { font-size:0.72rem; color:var(--text3); margin-top:4px; font-weight:500; text-transform:uppercase; letter-spacing:.04em; }
+.tile.accent { background:var(--accent-light); border-color:rgba(74,124,46,.1); }
+.tile.coral { background:var(--coral-light); border-color:rgba(212,101,74,.1); }
+.tile.gold { background:var(--gold-light); border-color:rgba(196,155,42,.1); }
+.tile.blue { background:var(--blue-light); border-color:rgba(58,124,165,.1); }
+
+/* Form Elements */
+.form-group { margin-bottom:16px; }
+.form-label {
+  display:block; font-size:0.82rem; font-weight:600; color:var(--text2);
+  margin-bottom:6px; text-transform:uppercase; letter-spacing:.04em;
+}
+.form-input, .form-select, .form-textarea {
+  width:100%; padding:12px 14px; border:1.5px solid var(--bg3);
+  border-radius:var(--radius-sm); font-family:var(--font); font-size:0.95rem;
+  color:var(--text); background:var(--surface2); transition:border-color .2s, box-shadow .2s;
+  outline:none;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-light);
+}
+.form-textarea { resize:vertical; min-height:80px; }
+.form-input::placeholder { color:var(--text3); }
+
+/* Slider */
+.slider-wrap { position:relative; padding:8px 0; }
+.slider-labels { display:flex; justify-content:space-between; font-size:.72rem; color:var(--text3); margin-top:4px; }
+input[type="range"] {
+  -webkit-appearance:none; width:100%; height:6px; border-radius:3px;
+  background:var(--bg3); outline:none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance:none; width:28px; height:28px; border-radius:50%;
+  background:var(--accent); border:3px solid var(--surface);
+  box-shadow:0 2px 8px rgba(0,0,0,.15); cursor:pointer;
+}
+.slider-value {
+  position:absolute; top:-6px; left:50%; transform:translateX(-50%);
+  font-family:var(--font-display); font-size:1.8rem; color:var(--accent);
+  pointer-events:none; transition:left .1s;
+}
+
+/* Buttons */
+.btn {
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  padding:12px 20px; border-radius:var(--radius-sm); font-family:var(--font);
+  font-size:0.9rem; font-weight:600; border:none; cursor:pointer;
+  transition:all .15s; text-decoration:none; white-space:nowrap;
+}
+.btn:active { transform:scale(.96); }
+.btn-primary { background:var(--accent); color:#fff; }
+.btn-primary:hover { background:var(--accent2); }
+.btn-secondary { background:var(--bg2); color:var(--text2); }
+.btn-secondary:hover { background:var(--bg3); }
+.btn-danger { background:var(--coral); color:#fff; }
+.btn-ghost { background:transparent; color:var(--text2); padding:8px; }
+.btn-ghost:hover { background:var(--bg2); }
+.btn-sm { padding:8px 14px; font-size:.82rem; }
+.btn-block { width:100%; }
+.btn-icon {
+  width:40px; height:40px; padding:0; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+}
+
+/* Tags */
+.tags { display:flex; flex-wrap:wrap; gap:6px; }
+.tag {
+  padding:6px 14px; border-radius:20px; font-size:.82rem; font-weight:500;
+  cursor:pointer; border:1.5px solid var(--bg3); background:var(--surface2);
+  color:var(--text2); transition:all .15s; user-select:none;
+}
+.tag.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+.tag:active { transform:scale(.95); }
+
+/* Navigation */
+.nav {
+  position:fixed; bottom:0; left:0; right:0;
+  height:calc(var(--nav-h) + var(--safe-bottom));
+  padding-bottom:var(--safe-bottom);
+  background:var(--surface);
+  display:flex; justify-content:space-around; align-items:center;
+  box-shadow:0 -2px 20px rgba(42,35,24,0.08);
+  border-top:1px solid var(--bg2);
+  z-index:100;
+}
+.nav-item {
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+  padding:6px 12px; cursor:pointer; color:var(--text3);
+  transition:color .2s; text-decoration:none; position:relative;
+}
+.nav-item.active { color:var(--accent); }
+.nav-item svg { width:24px; height:24px; }
+.nav-item span { font-size:.65rem; font-weight:600; text-transform:uppercase; letter-spacing:.04em; }
+.nav-dot {
+  position:absolute; top:4px; right:8px; width:7px; height:7px;
+  border-radius:50%; background:var(--coral);
+}
+
+/* Modal */
+.modal-overlay {
+  position:fixed; inset:0; background:rgba(42,35,24,0.4);
+  z-index:200; display:none; align-items:flex-end; justify-content:center;
+  backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+}
+.modal-overlay.show { display:flex; }
+.modal {
+  background:var(--surface); border-radius:var(--radius) var(--radius) 0 0;
+  width:100%; max-width:500px; max-height:85dvh; overflow-y:auto;
+  padding:24px 20px calc(20px + var(--safe-bottom));
+  animation:slideUp .3s ease;
+}
+@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.modal-header {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:20px;
+}
+.modal-header h2 { font-size:1.2rem; }
+.modal-close { background:none; border:none; font-size:1.5rem; color:var(--text3); cursor:pointer; padding:4px; }
+
+/* Status bar */
+.status-bar {
+  position:fixed; top:var(--safe-top); left:0; right:0;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px 16px; background:var(--surface);
+  border-bottom:1px solid var(--bg2); z-index:90;
+  min-height:44px;
+}
+.status-left { font-family:var(--font-display); font-size:1.1rem; color:var(--accent); }
+.status-right { display:flex; align-items:center; gap:8px; }
+.save-indicator {
+  font-size:.72rem; font-weight:600; padding:4px 10px;
+  border-radius:12px; text-transform:uppercase; letter-spacing:.04em;
+}
+.save-indicator.saved { background:var(--accent-light); color:var(--accent); }
+.save-indicator.unsaved { background:var(--coral-light); color:var(--coral); animation:pulse 1.5s infinite; }
+@keyframes pulse { 50%{opacity:.6} }
+
+body { padding-top:calc(var(--safe-top) + 52px); }
+
+/* Completion bar */
+.completion-bar { height:4px; border-radius:2px; background:var(--bg3); margin:12px 0; overflow:hidden; }
+.completion-fill { height:100%; border-radius:2px; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .4s ease; }
+
+/* History list */
+.history-item {
+  display:flex; align-items:center; gap:12px; padding:14px;
+  background:var(--surface); border-radius:var(--radius-sm);
+  margin-bottom:8px; box-shadow:var(--shadow); cursor:pointer;
+  border:1px solid rgba(42,35,24,0.04); transition:transform .1s;
+}
+.history-item:active { transform:scale(.98); }
+.history-date { text-align:center; min-width:48px; }
+.history-date .day { font-family:var(--font-display); font-size:1.5rem; line-height:1; color:var(--accent); }
+.history-date .month { font-size:.65rem; font-weight:600; color:var(--text3); text-transform:uppercase; }
+.history-info { flex:1; min-width:0; }
+.history-mood { font-size:.85rem; }
+.history-preview { font-size:.78rem; color:var(--text3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.history-actions { display:flex; gap:4px; }
+
+/* Charts */
+.chart-container { position:relative; height:200px; margin:12px 0; }
+canvas { width:100%!important; height:100%!important; }
+
+/* Comparison */
+.compare-columns { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.compare-col { padding:12px; border-radius:var(--radius-sm); background:var(--surface2); }
+.compare-col h3 { font-size:.72rem; margin-bottom:8px; }
+.compare-row { display:flex; justify-content:space-between; padding:4px 0; font-size:.85rem; border-bottom:1px solid var(--bg2); }
+.compare-row:last-child { border:none; }
+.compare-diff { font-weight:600; }
+.compare-diff.up { color:var(--accent); }
+.compare-diff.down { color:var(--coral); }
+
+/* Toast */
+.toast {
+  position:fixed; top:calc(var(--safe-top) + 56px); left:50%; transform:translateX(-50%) translateY(-120%);
+  padding:10px 20px; border-radius:var(--radius-sm);
+  background:var(--text); color:var(--bg); font-size:.85rem; font-weight:500;
+  z-index:300; transition:transform .3s ease; white-space:nowrap;
+  box-shadow:var(--shadow-lg);
+}
+.toast.show { transform:translateX(-50%) translateY(0); }
+
+/* Guided wizard */
+.wizard-progress { display:flex; gap:4px; margin-bottom:20px; }
+.wizard-dot { flex:1; height:4px; border-radius:2px; background:var(--bg3); transition:background .3s; }
+.wizard-dot.done { background:var(--accent); }
+.wizard-dot.current { background:var(--accent2); }
+.wizard-step { display:none; }
+.wizard-step.active { display:block; animation:fadeIn .3s; }
+.wizard-nav { display:flex; gap:10px; margin-top:20px; }
+.wizard-nav .btn { flex:1; }
+
+/* Insights */
+.insight-card {
+  background:linear-gradient(135deg,var(--accent-light),var(--surface));
+  border-radius:var(--radius); padding:16px; margin-bottom:12px;
+  border-left:4px solid var(--accent);
+}
+.insight-card .insight-title { font-weight:700; font-size:.85rem; color:var(--accent); margin-bottom:4px; }
+.insight-card .insight-text { font-size:.88rem; color:var(--text2); line-height:1.5; }
+.insight-card.warning { background:linear-gradient(135deg,var(--coral-light),var(--surface)); border-color:var(--coral); }
+.insight-card.warning .insight-title { color:var(--coral); }
+
+/* Empty state */
+.empty-state { text-align:center; padding:40px 20px; }
+.empty-state svg { width:64px; height:64px; color:var(--text3); opacity:.4; margin-bottom:16px; }
+.empty-state p { color:var(--text3); font-size:.9rem; margin-bottom:16px; }
+
+/* Backup reminder */
+.backup-banner {
+  background:var(--gold-light); border:1.5px solid var(--gold);
+  border-radius:var(--radius-sm); padding:12px 16px;
+  margin-bottom:14px; display:flex; align-items:center; gap:10px;
+  font-size:.85rem; color:var(--text2);
+}
+.backup-banner svg { flex-shrink:0; color:var(--gold); }
+
+/* Filter panel */
+.filter-panel {
+  overflow:hidden; max-height:0; transition:max-height .3s ease;
+  margin-bottom:0;
+}
+.filter-panel.open { max-height:400px; margin-bottom:14px; }
+.filter-panel-inner { padding:14px; background:var(--surface2); border-radius:var(--radius-sm); }
+.filter-row { display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
+.filter-row:last-child { margin-bottom:0; }
+
+/* Misc */
+.divider { height:1px; background:var(--bg3); margin:16px 0; }
+.text-muted { color:var(--text3); }
+.text-sm { font-size:.82rem; }
+.mt-8 { margin-top:8px; }
+.mt-16 { margin-top:16px; }
+.mb-8 { margin-bottom:8px; }
+.flex-between { display:flex; justify-content:space-between; align-items:center; }
+.gap-8 { gap:8px; }
+.hidden { display:none!important; }
+
+/* Pain zones */
+.pain-zones { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.pain-zone { padding:5px 12px; border-radius:16px; font-size:.78rem; font-weight:500; cursor:pointer; border:1.5px solid var(--bg3); background:var(--surface2); color:var(--text2); user-select:none; transition:all .15s; }
+.pain-zone.active { background:var(--coral); color:#fff; border-color:var(--coral); }
+
+/* Date picker row */
+.date-nav { display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:16px; }
+.date-nav .btn-icon { background:var(--bg2); }
+.date-nav .current-date { font-family:var(--font-display); font-size:1.1rem; cursor:pointer; }
+
+/* Supplement tags */
+.supplement-tags .tag.active { background:var(--purple); border-color:var(--purple); }
+
+@media(min-width:500px) {
+  .page { max-width:500px; margin:0 auto; }
+  .status-bar { justify-content:center; gap:200px; }
+  .modal { border-radius:var(--radius); margin:auto; }
+}
+
+/* Quick exercise log */
+.exercise-row { display:flex; gap:8px; align-items:end; margin-bottom:8px; }
+.exercise-row .form-group { flex:1; margin-bottom:0; }
+
+/* Print-safe */
+@media print { .nav,.status-bar { display:none; } body { padding:0; } }
+</style>
+</head>
+<body>
+
+<!-- Status Bar -->
+<div class="status-bar">
+  <div class="status-left">📓 Journal v2</div>
+  <div class="status-right">
+    <span id="saveIndicator" class="save-indicator saved">✓ Sauvé</span>
+    <button class="btn-ghost btn-icon" onclick="saveEntry()" title="Sauvegarder" id="saveBtn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<!-- ====== PAGE: TODAY ====== -->
+<div id="pageToday" class="page active">
+  <div class="page-header">
+    <div>
+      <h1 id="todayTitle">Aujourd'hui</h1>
+      <p class="text-sm text-muted" id="todayDate"></p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-sm btn-secondary" onclick="openWizard()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Guidé
+      </button>
+    </div>
+  </div>
+
+  <!-- Backup reminder -->
+  <div id="backupBanner" class="backup-banner hidden">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <div>
+      <strong>Backup recommandé</strong><br>
+      <span class="text-sm">Dernière sauvegarde il y a plus de 7 jours</span>
+    </div>
+    <button class="btn btn-sm btn-secondary" onclick="navigate('settings');dismissBackup()">Exporter</button>
+  </div>
+
+  <!-- Date navigation -->
+  <div class="date-nav">
+    <button class="btn-icon btn-ghost" onclick="changeDay(-1)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <span class="current-date" id="currentDateLabel" onclick="jumpToDate()"></span>
+    <button class="btn-icon btn-ghost" onclick="changeDay(1)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+
+  <!-- Completion -->
+  <div class="completion-bar"><div class="completion-fill" id="completionBar" style="width:0%"></div></div>
+  <p class="text-sm text-muted mb-8" id="completionText">Complétion : 0%</p>
+
+  <!-- Summary tiles -->
+  <div class="tiles" id="todayTiles">
+    <div class="tile accent" onclick="scrollToField('mood')">
+      <div class="tile-icon">😊</div>
+      <div class="tile-value" id="tileMood">—</div>
+      <div class="tile-label">Humeur</div>
+    </div>
+    <div class="tile blue" onclick="scrollToField('weight')">
+      <div class="tile-icon">⚖️</div>
+      <div class="tile-value" id="tileWeight">—</div>
+      <div class="tile-label">Poids</div>
+    </div>
+    <div class="tile coral" onclick="scrollToField('pain')">
+      <div class="tile-icon">💪</div>
+      <div class="tile-value" id="tilePain">—</div>
+      <div class="tile-label">Douleur</div>
+    </div>
+    <div class="tile gold" onclick="scrollToField('exercise')">
+      <div class="tile-icon">🏃</div>
+      <div class="tile-value" id="tileExercise">—</div>
+      <div class="tile-label">Exercice</div>
+    </div>
+  </div>
+
+  <!-- HUMEUR -->
+  <div class="card" id="field-mood">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+      Humeur
+    </div>
+    <div class="slider-wrap">
+      <div class="slider-value" id="moodDisplay">5</div>
+      <input type="range" id="mood" min="1" max="10" value="5" oninput="onFieldChange()">
+      <div class="slider-labels"><span>😞 1</span><span>😐 5</span><span>😄 10</span></div>
+    </div>
+  </div>
+
+  <!-- POIDS -->
+  <div class="card" id="field-weight">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
+      Poids (lbs)
+    </div>
+    <input type="number" class="form-input" id="weight" placeholder="ex: 185" step="0.1" oninput="onFieldChange()">
+  </div>
+
+  <!-- EXERCICE -->
+  <div class="card" id="field-exercise">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M6 8H5a4 4 0 000 8h1"/><line x1="6" y1="12" x2="18" y2="12"/></svg>
+      Exercice
+    </div>
+    <div class="tags mb-8" id="exerciseTags">
+      <span class="tag" data-val="Marche" onclick="toggleTag(this,'exercise')">🚶 Marche</span>
+      <span class="tag" data-val="Course" onclick="toggleTag(this,'exercise')">🏃 Course</span>
+      <span class="tag" data-val="Vélo" onclick="toggleTag(this,'exercise')">🚴 Vélo</span>
+      <span class="tag" data-val="Musculation" onclick="toggleTag(this,'exercise')">🏋️ Muscu</span>
+      <span class="tag" data-val="Yoga" onclick="toggleTag(this,'exercise')">🧘 Yoga</span>
+      <span class="tag" data-val="Natation" onclick="toggleTag(this,'exercise')">🏊 Natation</span>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Durée (minutes)</label>
+      <input type="number" class="form-input" id="exerciseDuration" placeholder="30" oninput="onFieldChange()">
+    </div>
+    <div class="form-group" style="margin-bottom:0">
+      <label class="form-label">Notes exercice</label>
+      <input type="text" class="form-input" id="exerciseNotes" placeholder="Détails..." oninput="onFieldChange()">
+    </div>
+  </div>
+
+  <!-- DOULEUR -->
+  <div class="card" id="field-pain">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      Douleurs
+    </div>
+    <div class="slider-wrap">
+      <div class="slider-value" id="painDisplay">0</div>
+      <input type="range" id="pain" min="0" max="10" value="0" oninput="onFieldChange()">
+      <div class="slider-labels"><span>Aucune</span><span>Modérée</span><span>Intense</span></div>
+    </div>
+    <label class="form-label mt-8">Zones</label>
+    <div class="pain-zones" id="painZones">
+      <span class="pain-zone" data-val="Tête" onclick="toggleTag(this,'painZone')">Tête</span>
+      <span class="pain-zone" data-val="Cou" onclick="toggleTag(this,'painZone')">Cou</span>
+      <span class="pain-zone" data-val="Épaules" onclick="toggleTag(this,'painZone')">Épaules</span>
+      <span class="pain-zone" data-val="Dos" onclick="toggleTag(this,'painZone')">Dos</span>
+      <span class="pain-zone" data-val="Bras" onclick="toggleTag(this,'painZone')">Bras</span>
+      <span class="pain-zone" data-val="Poignet" onclick="toggleTag(this,'painZone')">Poignet</span>
+      <span class="pain-zone" data-val="Hanches" onclick="toggleTag(this,'painZone')">Hanches</span>
+      <span class="pain-zone" data-val="Genoux" onclick="toggleTag(this,'painZone')">Genoux</span>
+      <span class="pain-zone" data-val="Jambes" onclick="toggleTag(this,'painZone')">Jambes</span>
+      <span class="pain-zone" data-val="Pieds" onclick="toggleTag(this,'painZone')">Pieds</span>
+      <span class="pain-zone" data-val="Ventre" onclick="toggleTag(this,'painZone')">Ventre</span>
+    </div>
+  </div>
+
+  <!-- ÉTAT D'ÂME -->
+  <div class="card" id="field-state">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+      État d'âme
+    </div>
+    <textarea class="form-textarea" id="soulState" placeholder="Comment te sens-tu aujourd'hui?" oninput="onFieldChange()"></textarea>
+  </div>
+
+  <!-- HABITUDES -->
+  <div class="card" id="field-habits">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      Habitudes
+    </div>
+    <div class="tags" id="habitTags">
+      <span class="tag" data-val="Méditation" onclick="toggleTag(this,'habit')">🧘 Méditation</span>
+      <span class="tag" data-val="Lecture" onclick="toggleTag(this,'habit')">📖 Lecture</span>
+      <span class="tag" data-val="Eau 2L" onclick="toggleTag(this,'habit')">💧 Eau 2L</span>
+      <span class="tag" data-val="Bon sommeil" onclick="toggleTag(this,'habit')">😴 Bon sommeil</span>
+      <span class="tag" data-val="Pas d'alcool" onclick="toggleTag(this,'habit')">🚫 Pas d'alcool</span>
+      <span class="tag" data-val="Gratitude" onclick="toggleTag(this,'habit')">🙏 Gratitude</span>
+    </div>
+  </div>
+
+  <!-- ALIMENTATION -->
+  <div class="card" id="field-food">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+      Alimentation
+    </div>
+    <textarea class="form-textarea" id="food" placeholder="Qu'as-tu mangé aujourd'hui?" oninput="onFieldChange()"></textarea>
+  </div>
+
+  <!-- SUPPLÉMENTS -->
+  <div class="card" id="field-supplements">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Suppléments
+    </div>
+    <div class="tags supplement-tags" id="supplementTags">
+      <span class="tag" data-val="Vitamine D" onclick="toggleTag(this,'supplement')">☀️ Vit D</span>
+      <span class="tag" data-val="Oméga-3" onclick="toggleTag(this,'supplement')">🐟 Oméga-3</span>
+      <span class="tag" data-val="Magnésium" onclick="toggleTag(this,'supplement')">💊 Magnésium</span>
+      <span class="tag" data-val="Zinc" onclick="toggleTag(this,'supplement')">🔩 Zinc</span>
+      <span class="tag" data-val="Probiotique" onclick="toggleTag(this,'supplement')">🦠 Probiotique</span>
+      <span class="tag" data-val="Créatine" onclick="toggleTag(this,'supplement')">💪 Créatine</span>
+      <span class="tag" data-val="Multivitamine" onclick="toggleTag(this,'supplement')">🌈 Multi</span>
+    </div>
+  </div>
+
+  <!-- NOTES -->
+  <div class="card" id="field-notes">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+      Notes libres
+    </div>
+    <textarea class="form-textarea" id="notes" placeholder="Tout ce qui te passe par la tête..." oninput="onFieldChange()"></textarea>
+  </div>
+
+  <button class="btn btn-primary btn-block mt-16" onclick="saveEntry()" style="margin-bottom:20px">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+    Sauvegarder
+  </button>
+</div>
+
+<!-- ====== PAGE: COMPARE ====== -->
+<div id="pageCompare" class="page">
+  <div class="page-header">
+    <h1>Comparer</h1>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Comparaison automatique</div>
+    <div class="flex-between mb-8">
+      <button class="btn btn-sm btn-secondary" id="compareWeekBtn" onclick="loadComparison('week')">Semaine passée</button>
+      <button class="btn btn-sm btn-secondary" id="compareYearBtn" onclick="loadComparison('year')">Même date an passé</button>
+    </div>
+    <div class="flex-between mb-8">
+      <label class="form-label" style="margin:0">Choisir une date :</label>
+      <input type="date" class="form-input" id="compareDate" style="width:auto" onchange="loadComparison('custom')">
+    </div>
+  </div>
+
+  <div id="compareResult"></div>
+</div>
+
+<!-- ====== PAGE: HISTORY ====== -->
+<div id="pageHistory" class="page">
+  <div class="page-header">
+    <h1>Historique</h1>
+    <button class="btn btn-sm btn-ghost" onclick="toggleFilters()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+    </button>
+  </div>
+
+  <div class="filter-panel" id="filterPanel">
+    <div class="filter-panel-inner">
+      <div class="filter-row">
+        <input type="date" class="form-input" id="filterFrom" style="flex:1" placeholder="Du">
+        <input type="date" class="form-input" id="filterTo" style="flex:1" placeholder="Au">
+      </div>
+      <div class="filter-row">
+        <select class="form-select" id="filterMood" style="flex:1">
+          <option value="">Humeur...</option>
+          <option value="low">😞 1-3</option>
+          <option value="mid">😐 4-6</option>
+          <option value="high">😊 7-10</option>
+        </select>
+        <select class="form-select" id="filterExercise" style="flex:1">
+          <option value="">Exercice...</option>
+          <option value="yes">Avec exercice</option>
+          <option value="no">Sans exercice</option>
+        </select>
+      </div>
+      <div class="filter-row">
+        <input type="text" class="form-input" id="filterText" placeholder="Recherche texte..." style="flex:1">
+        <button class="btn btn-sm btn-primary" onclick="applyFilters()">Filtrer</button>
+        <button class="btn btn-sm btn-secondary" onclick="clearFilters()">✕</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="historyList"></div>
+</div>
+
+<!-- ====== PAGE: STATS ====== -->
+<div id="pageStats" class="page">
+  <div class="page-header">
+    <h1>Tendances</h1>
+  </div>
+
+  <div class="tiles">
+    <div class="tile accent">
+      <div class="tile-value" id="statAvgMood">—</div>
+      <div class="tile-label">Humeur moy.</div>
+    </div>
+    <div class="tile blue">
+      <div class="tile-value" id="statAvgWeight">—</div>
+      <div class="tile-label">Poids moy.</div>
+    </div>
+    <div class="tile gold">
+      <div class="tile-value" id="statExDays">—</div>
+      <div class="tile-label">Jours exercice</div>
+    </div>
+    <div class="tile coral">
+      <div class="tile-value" id="statTotal">—</div>
+      <div class="tile-label">Total entrées</div>
+    </div>
+  </div>
+
+  <div id="insightsContainer"></div>
+
+  <div class="card">
+    <div class="card-title">Humeur (30 derniers jours)</div>
+    <div class="chart-container"><canvas id="moodChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Poids (30 derniers jours)</div>
+    <div class="chart-container"><canvas id="weightChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Exercice (30 derniers jours)</div>
+    <div class="chart-container"><canvas id="exerciseChart"></canvas></div>
+  </div>
+</div>
+
+<!-- ====== PAGE: SETTINGS ====== -->
+<div id="pageSettings" class="page">
+  <div class="page-header">
+    <h1>Données</h1>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Exporter</div>
+    <p class="text-sm text-muted mb-8">Télécharge toutes tes données en fichier JSON.</p>
+    <button class="btn btn-primary btn-block" onclick="exportData()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Exporter JSON
+    </button>
+    <p class="text-sm text-muted mt-8" id="lastExportInfo"></p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Importer</div>
+    <p class="text-sm text-muted mb-8">Restaure tes données depuis un fichier JSON.</p>
+    <div class="form-group">
+      <select class="form-select" id="importMode">
+        <option value="merge">Fusion (ajouter les nouvelles)</option>
+        <option value="replace">Remplacement (tout écraser)</option>
+        <option value="missing">Dates manquantes seulement</option>
+      </select>
+    </div>
+    <input type="file" id="importFile" accept=".json" class="hidden">
+    <button class="btn btn-secondary btn-block" onclick="document.getElementById('importFile').click()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Choisir fichier
+    </button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Statistiques</div>
+    <div id="dbStats"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⚠️ Zone dangereuse</div>
+    <button class="btn btn-danger btn-block" onclick="confirmDeleteAll()">Supprimer toutes les données</button>
+  </div>
+</div>
+
+<!-- ====== NAVIGATION ====== -->
+<nav class="nav">
+  <a class="nav-item active" data-page="pageToday" onclick="navigate('today')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    <span>Entrée</span>
+  </a>
+  <a class="nav-item" data-page="pageCompare" onclick="navigate('compare')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    <span>Comparer</span>
+  </a>
+  <a class="nav-item" data-page="pageHistory" onclick="navigate('history')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    <span>Historique</span>
+  </a>
+  <a class="nav-item" data-page="pageStats" onclick="navigate('stats')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 118 2.83"/><path d="M22 12A10 10 0 0012 2v10z"/></svg>
+    <span>Tendances</span>
+  </a>
+  <a class="nav-item" data-page="pageSettings" onclick="navigate('settings')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    <span>Données</span>
+  </a>
+</nav>
+
+<!-- ====== MODAL: WIZARD ====== -->
+<div class="modal-overlay" id="wizardModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="wizardTitle">Mode guidé</h2>
+      <button class="modal-close" onclick="closeWizard()">✕</button>
+    </div>
+    <div class="wizard-progress" id="wizardProgress"></div>
+    <div id="wizardContent"></div>
+    <div class="wizard-nav">
+      <button class="btn btn-secondary" id="wizPrev" onclick="wizardPrev()">Précédent</button>
+      <button class="btn btn-primary" id="wizNext" onclick="wizardNext()">Suivant</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MODAL: ENTRY VIEW ====== -->
+<div class="modal-overlay" id="entryModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="entryModalTitle">Entrée</h2>
+      <button class="modal-close" onclick="closeModal('entryModal')">✕</button>
+    </div>
+    <div id="entryModalContent"></div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn btn-secondary" style="flex:1" onclick="editEntryFromModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Modifier
+      </button>
+      <button class="btn btn-danger" style="flex:1" onclick="deleteEntryFromModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+        Supprimer
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATABASE
+// ============================================================
+const DB_NAME = 'JournalIntelligentV2';
+const DB_VERSION = 1;
+const STORE = 'entries';
+let db;
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains(STORE)) {
+        d.createObjectStore(STORE, { keyPath: 'date' });
+      }
+    };
+    req.onsuccess = e => { db = e.target.result; resolve(db); };
+    req.onerror = e => reject(e);
+  });
+}
+
+function dbPut(entry) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).put(entry);
+    tx.oncomplete = () => resolve();
+    tx.onerror = e => reject(e);
+  });
+}
+
+function dbGet(date) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).get(date);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = e => reject(e);
+  });
+}
+
+function dbGetAll() {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = e => reject(e);
+  });
+}
+
+function dbDelete(date) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).delete(date);
+    tx.oncomplete = () => resolve();
+    tx.onerror = e => reject(e);
+  });
+}
+
+function dbClear() {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).clear();
+    tx.oncomplete = () => resolve();
+    tx.onerror = e => reject(e);
+  });
+}
+
+// ============================================================
+// STATE
+// ============================================================
+let currentDate = new Date();
+let isDirty = false;
+let viewingEntryDate = null;
+let wizardStep = 0;
+const WIZARD_STEPS = ['humeur','poids','exercice','douleur','etat','habitudes','alimentation','supplements','notes'];
+
+function dateStr(d) {
+  const dd = d instanceof Date ? d : new Date(d);
+  return dd.toISOString().split('T')[0];
+}
+
+function formatDateFR(str) {
+  const d = new Date(str + 'T12:00:00');
+  return d.toLocaleDateString('fr-CA', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+}
+
+function shortDateFR(str) {
+  const d = new Date(str + 'T12:00:00');
+  return d.toLocaleDateString('fr-CA', { day:'numeric', month:'short' });
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function navigate(page) {
+  const map = { today:'pageToday', compare:'pageCompare', history:'pageHistory', stats:'pageStats', settings:'pageSettings' };
+  const id = map[page] || page;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === id));
+  if (page === 'history') loadHistory();
+  if (page === 'stats') loadStats();
+  if (page === 'settings') loadSettings();
+  if (page === 'compare') loadComparison('week');
+  window.scrollTo(0, 0);
+}
+
+// ============================================================
+// DATE NAVIGATION
+// ============================================================
+function changeDay(delta) {
+  if (isDirty && !confirm('Modifications non sauvegardées. Continuer?')) return;
+  currentDate.setDate(currentDate.getDate() + delta);
+  loadDay();
+}
+
+function jumpToDate() {
+  const input = document.createElement('input');
+  input.type = 'date';
+  input.value = dateStr(currentDate);
+  input.onchange = () => {
+    if (isDirty && !confirm('Modifications non sauvegardées. Continuer?')) return;
+    currentDate = new Date(input.value + 'T12:00:00');
+    loadDay();
+  };
+  input.showPicker?.() || input.click();
+}
+
+async function loadDay() {
+  const ds = dateStr(currentDate);
+  const today = dateStr(new Date());
+  document.getElementById('currentDateLabel').textContent = formatDateFR(ds);
+  document.getElementById('todayTitle').textContent = ds === today ? "Aujourd'hui" : formatDateFR(ds);
+  document.getElementById('todayDate').textContent = ds === today ? formatDateFR(ds) : '';
+
+  // Reset form
+  document.getElementById('mood').value = 5;
+  document.getElementById('weight').value = '';
+  document.getElementById('exerciseDuration').value = '';
+  document.getElementById('exerciseNotes').value = '';
+  document.getElementById('pain').value = 0;
+  document.getElementById('soulState').value = '';
+  document.getElementById('food').value = '';
+  document.getElementById('notes').value = '';
+  document.querySelectorAll('.tag.active, .pain-zone.active').forEach(t => t.classList.remove('active'));
+
+  const entry = await dbGet(ds);
+  if (entry) {
+    document.getElementById('mood').value = entry.mood || 5;
+    document.getElementById('weight').value = entry.weight || '';
+    document.getElementById('exerciseDuration').value = entry.exerciseDuration || '';
+    document.getElementById('exerciseNotes').value = entry.exerciseNotes || '';
+    document.getElementById('pain').value = entry.pain || 0;
+    document.getElementById('soulState').value = entry.soulState || '';
+    document.getElementById('food').value = entry.food || '';
+    document.getElementById('notes').value = entry.notes || '';
+    (entry.exerciseTypes || []).forEach(v => {
+      const t = document.querySelector(`#exerciseTags .tag[data-val="${v}"]`);
+      if (t) t.classList.add('active');
+    });
+    (entry.painZones || []).forEach(v => {
+      const t = document.querySelector(`#painZones .pain-zone[data-val="${v}"]`);
+      if (t) t.classList.add('active');
+    });
+    (entry.habits || []).forEach(v => {
+      const t = document.querySelector(`#habitTags .tag[data-val="${v}"]`);
+      if (t) t.classList.add('active');
+    });
+    (entry.supplements || []).forEach(v => {
+      const t = document.querySelector(`#supplementTags .tag[data-val="${v}"]`);
+      if (t) t.classList.add('active');
+    });
+  }
+
+  updateSliderDisplays();
+  updateTiles();
+  updateCompletion();
+  setDirty(false);
+  checkBackupReminder();
+}
+
+// ============================================================
+// FIELD CHANGES & SAVE
+// ============================================================
+function onFieldChange() {
+  setDirty(true);
+  updateSliderDisplays();
+  updateTiles();
+  updateCompletion();
+}
+
+function setDirty(v) {
+  isDirty = v;
+  const ind = document.getElementById('saveIndicator');
+  if (v) {
+    ind.textContent = '● Non sauvé';
+    ind.className = 'save-indicator unsaved';
+  } else {
+    ind.textContent = '✓ Sauvé';
+    ind.className = 'save-indicator saved';
+  }
+}
+
+function updateSliderDisplays() {
+  const moodVal = document.getElementById('mood').value;
+  const painVal = document.getElementById('pain').value;
+  document.getElementById('moodDisplay').textContent = moodVal;
+  document.getElementById('painDisplay').textContent = painVal;
+  // Position slider values
+  const moodPct = (moodVal - 1) / 9 * 100;
+  document.getElementById('moodDisplay').style.left = `calc(${moodPct}% + ${(50 - moodPct) * 0.28}px)`;
+  const painPct = painVal / 10 * 100;
+  document.getElementById('painDisplay').style.left = `calc(${painPct}% + ${(50 - painPct) * 0.28}px)`;
+}
+
+function getActiveTags(containerId) {
+  return [...document.querySelectorAll(`#${containerId} .tag.active, #${containerId} .pain-zone.active`)].map(t => t.dataset.val);
+}
+
+function collectEntry() {
+  return {
+    date: dateStr(currentDate),
+    mood: parseInt(document.getElementById('mood').value),
+    weight: parseFloat(document.getElementById('weight').value) || null,
+    exerciseTypes: getActiveTags('exerciseTags'),
+    exerciseDuration: parseInt(document.getElementById('exerciseDuration').value) || null,
+    exerciseNotes: document.getElementById('exerciseNotes').value.trim(),
+    pain: parseInt(document.getElementById('pain').value),
+    painZones: getActiveTags('painZones'),
+    soulState: document.getElementById('soulState').value.trim(),
+    habits: getActiveTags('habitTags'),
+    food: document.getElementById('food').value.trim(),
+    supplements: getActiveTags('supplementTags'),
+    notes: document.getElementById('notes').value.trim(),
+    updatedAt: new Date().toISOString()
+  };
+}
+
+async function saveEntry() {
+  const entry = collectEntry();
+  await dbPut(entry);
+  setDirty(false);
+  showToast('Sauvegardé ✓');
+}
+
+function updateTiles() {
+  const m = document.getElementById('mood').value;
+  const w = document.getElementById('weight').value;
+  const p = document.getElementById('pain').value;
+  const ex = getActiveTags('exerciseTags');
+  const dur = document.getElementById('exerciseDuration').value;
+  document.getElementById('tileMood').textContent = m + '/10';
+  document.getElementById('tileWeight').textContent = w ? w + ' lbs' : '—';
+  document.getElementById('tilePain').textContent = p > 0 ? p + '/10' : 'Aucune';
+  document.getElementById('tileExercise').textContent = ex.length > 0 ? (dur ? dur + ' min' : ex[0]) : '—';
+}
+
+function updateCompletion() {
+  const fields = [
+    document.getElementById('mood').value != 5,
+    !!document.getElementById('weight').value,
+    getActiveTags('exerciseTags').length > 0,
+    document.getElementById('pain').value != 0 || getActiveTags('painZones').length > 0,
+    !!document.getElementById('soulState').value.trim(),
+    getActiveTags('habitTags').length > 0,
+    !!document.getElementById('food').value.trim(),
+    getActiveTags('supplementTags').length > 0,
+    !!document.getElementById('notes').value.trim()
+  ];
+  const pct = Math.round(fields.filter(Boolean).length / fields.length * 100);
+  document.getElementById('completionBar').style.width = pct + '%';
+  document.getElementById('completionText').textContent = `Complétion : ${pct}%`;
+}
+
+function toggleTag(el) {
+  el.classList.toggle('active');
+  onFieldChange();
+}
+
+function scrollToField(id) {
+  document.getElementById('field-' + id)?.scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ============================================================
+// MODAL HELPERS
+// ============================================================
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+// ============================================================
+// WIZARD (GUIDED MODE)
+// ============================================================
+function openWizard() {
+  wizardStep = 0;
+  renderWizard();
+  openModal('wizardModal');
+}
+function closeWizard() { closeModal('wizardModal'); }
+
+function renderWizard() {
+  const steps = WIZARD_STEPS;
+  // Progress dots
+  let dots = '';
+  steps.forEach((_, i) => {
+    dots += `<div class="wizard-dot ${i < wizardStep ? 'done' : ''} ${i === wizardStep ? 'current' : ''}"></div>`;
+  });
+  document.getElementById('wizardProgress').innerHTML = dots;
+  document.getElementById('wizPrev').style.display = wizardStep === 0 ? 'none' : '';
+  document.getElementById('wizNext').textContent = wizardStep === steps.length - 1 ? 'Terminer' : 'Suivant';
+
+  const stepNames = ['😊 Humeur','⚖️ Poids','🏃 Exercice','💢 Douleur','💭 État d\'âme','✅ Habitudes','🍽️ Alimentation','💊 Suppléments','📝 Notes'];
+  document.getElementById('wizardTitle').textContent = stepNames[wizardStep] || 'Mode guidé';
+
+  const content = document.getElementById('wizardContent');
+  const s = steps[wizardStep];
+  let html = '';
+  if (s === 'humeur') {
+    html = `<p class="text-muted mb-8">Comment te sens-tu de 1 à 10?</p>
+      <div class="slider-wrap" style="padding-top:24px">
+        <div class="slider-value" id="wMoodDisp">${document.getElementById('mood').value}</div>
+        <input type="range" id="wMood" min="1" max="10" value="${document.getElementById('mood').value}" oninput="document.getElementById('mood').value=this.value;document.getElementById('wMoodDisp').textContent=this.value;onFieldChange()">
+        <div class="slider-labels"><span>😞 1</span><span>😐 5</span><span>😄 10</span></div>
+      </div>`;
+  } else if (s === 'poids') {
+    html = `<p class="text-muted mb-8">Ton poids aujourd'hui?</p>
+      <input type="number" class="form-input" value="${document.getElementById('weight').value}" placeholder="lbs" step="0.1"
+        oninput="document.getElementById('weight').value=this.value;onFieldChange()">`;
+  } else if (s === 'exercice') {
+    html = `<p class="text-muted mb-8">As-tu fait de l'exercice?</p>
+      <div class="tags mb-8">${document.getElementById('exerciseTags').innerHTML}</div>
+      <input type="number" class="form-input" value="${document.getElementById('exerciseDuration').value}" placeholder="Durée (min)"
+        oninput="document.getElementById('exerciseDuration').value=this.value;onFieldChange()">`;
+  } else if (s === 'douleur') {
+    html = `<p class="text-muted mb-8">Niveau de douleur?</p>
+      <div class="slider-wrap" style="padding-top:24px">
+        <div class="slider-value" id="wPainDisp">${document.getElementById('pain').value}</div>
+        <input type="range" id="wPain" min="0" max="10" value="${document.getElementById('pain').value}"
+          oninput="document.getElementById('pain').value=this.value;document.getElementById('wPainDisp').textContent=this.value;onFieldChange()">
+        <div class="slider-labels"><span>Aucune</span><span>Modérée</span><span>Intense</span></div>
+      </div>
+      <div class="pain-zones mt-8">${document.getElementById('painZones').innerHTML}</div>`;
+  } else if (s === 'etat') {
+    html = `<p class="text-muted mb-8">Ton état d'âme?</p>
+      <textarea class="form-textarea" rows="4" oninput="document.getElementById('soulState').value=this.value;onFieldChange()">${document.getElementById('soulState').value}</textarea>`;
+  } else if (s === 'habitudes') {
+    html = `<p class="text-muted mb-8">Quelles habitudes aujourd'hui?</p>
+      <div class="tags">${document.getElementById('habitTags').innerHTML}</div>`;
+  } else if (s === 'alimentation') {
+    html = `<p class="text-muted mb-8">Qu'as-tu mangé?</p>
+      <textarea class="form-textarea" rows="4" oninput="document.getElementById('food').value=this.value;onFieldChange()">${document.getElementById('food').value}</textarea>`;
+  } else if (s === 'supplements') {
+    html = `<p class="text-muted mb-8">Suppléments pris?</p>
+      <div class="tags supplement-tags">${document.getElementById('supplementTags').innerHTML}</div>`;
+  } else if (s === 'notes') {
+    html = `<p class="text-muted mb-8">Autre chose à noter?</p>
+      <textarea class="form-textarea" rows="4" oninput="document.getElementById('notes').value=this.value;onFieldChange()">${document.getElementById('notes').value}</textarea>`;
+  }
+  content.innerHTML = html;
+}
+
+function wizardNext() {
+  if (wizardStep >= WIZARD_STEPS.length - 1) {
+    closeWizard();
+    saveEntry();
+    return;
+  }
+  wizardStep++;
+  renderWizard();
+}
+function wizardPrev() {
+  if (wizardStep > 0) { wizardStep--; renderWizard(); }
+}
+
+// ============================================================
+// COMPARISON
+// ============================================================
+async function loadComparison(type) {
+  const ds = dateStr(currentDate);
+  let compareDs;
+  if (type === 'week') {
+    const d = new Date(currentDate);
+    d.setDate(d.getDate() - 7);
+    compareDs = dateStr(d);
+  } else if (type === 'year') {
+    const d = new Date(currentDate);
+    d.setFullYear(d.getFullYear() - 1);
+    compareDs = dateStr(d);
+  } else {
+    compareDs = document.getElementById('compareDate').value;
+    if (!compareDs) return;
+  }
+
+  // Highlight active button
+  document.getElementById('compareWeekBtn').classList.toggle('btn-primary', type === 'week');
+  document.getElementById('compareWeekBtn').classList.toggle('btn-secondary', type !== 'week');
+  document.getElementById('compareYearBtn').classList.toggle('btn-primary', type === 'year');
+  document.getElementById('compareYearBtn').classList.toggle('btn-secondary', type !== 'year');
+
+  const current = await dbGet(ds);
+  const compare = await dbGet(compareDs);
+
+  const container = document.getElementById('compareResult');
+  if (!current && !compare) {
+    container.innerHTML = '<div class="card"><p class="text-muted text-sm">Aucune donnée pour ces deux dates.</p></div>';
+    return;
+  }
+
+  function diffBadge(cur, prev, invert = false) {
+    if (cur == null || prev == null) return '';
+    const diff = cur - prev;
+    if (diff === 0) return '<span class="compare-diff">=</span>';
+    const cls = invert ? (diff > 0 ? 'down' : 'up') : (diff > 0 ? 'up' : 'down');
+    return `<span class="compare-diff ${cls}">${diff > 0 ? '▲' : '▼'} ${Math.abs(diff).toFixed(1)}</span>`;
+  }
+
+  const fields = [
+    { label: 'Humeur', key: 'mood', suffix: '/10' },
+    { label: 'Poids', key: 'weight', suffix: ' lbs' },
+    { label: 'Douleur', key: 'pain', suffix: '/10', invert: true },
+    { label: 'Exercice', key: 'exerciseDuration', suffix: ' min' },
+  ];
+
+  let html = `<div class="compare-columns">
+    <div class="compare-col"><h3>${shortDateFR(ds)}</h3>`;
+  fields.forEach(f => {
+    const v = current?.[f.key];
+    html += `<div class="compare-row"><span>${f.label}</span><span>${v != null ? v + f.suffix : '—'}</span></div>`;
+  });
+  html += `</div><div class="compare-col"><h3>${shortDateFR(compareDs)}</h3>`;
+  fields.forEach(f => {
+    const v = compare?.[f.key];
+    html += `<div class="compare-row"><span>${f.label}</span><span>${v != null ? v + f.suffix : '—'}</span></div>`;
+  });
+  html += `</div></div>`;
+
+  // Differences
+  if (current && compare) {
+    html += `<div class="card mt-8"><div class="card-title">Évolution</div>`;
+    fields.forEach(f => {
+      html += `<div class="compare-row"><span>${f.label}</span>${diffBadge(current[f.key], compare[f.key], f.invert)}</div>`;
+    });
+    html += '</div>';
+  }
+
+  // Extra data
+  if (current?.soulState || compare?.soulState) {
+    html += `<div class="card"><div class="card-title">États d'âme</div>`;
+    if (current?.soulState) html += `<p class="text-sm"><strong>${shortDateFR(ds)}:</strong> ${current.soulState}</p>`;
+    if (compare?.soulState) html += `<p class="text-sm mt-8"><strong>${shortDateFR(compareDs)}:</strong> ${compare.soulState}</p>`;
+    html += '</div>';
+  }
+
+  container.innerHTML = html;
+}
+
+// ============================================================
+// HISTORY
+// ============================================================
+let historyFilters = {};
+
+function toggleFilters() {
+  document.getElementById('filterPanel').classList.toggle('open');
+}
+
+function applyFilters() {
+  historyFilters = {
+    from: document.getElementById('filterFrom').value,
+    to: document.getElementById('filterTo').value,
+    mood: document.getElementById('filterMood').value,
+    exercise: document.getElementById('filterExercise').value,
+    text: document.getElementById('filterText').value.toLowerCase()
+  };
+  loadHistory();
+}
+
+function clearFilters() {
+  document.getElementById('filterFrom').value = '';
+  document.getElementById('filterTo').value = '';
+  document.getElementById('filterMood').value = '';
+  document.getElementById('filterExercise').value = '';
+  document.getElementById('filterText').value = '';
+  historyFilters = {};
+  loadHistory();
+}
+
+async function loadHistory() {
+  let entries = await dbGetAll();
+  entries.sort((a, b) => b.date.localeCompare(a.date));
+
+  // Apply filters
+  const f = historyFilters;
+  if (f.from) entries = entries.filter(e => e.date >= f.from);
+  if (f.to) entries = entries.filter(e => e.date <= f.to);
+  if (f.mood === 'low') entries = entries.filter(e => e.mood <= 3);
+  else if (f.mood === 'mid') entries = entries.filter(e => e.mood >= 4 && e.mood <= 6);
+  else if (f.mood === 'high') entries = entries.filter(e => e.mood >= 7);
+  if (f.exercise === 'yes') entries = entries.filter(e => (e.exerciseTypes || []).length > 0);
+  else if (f.exercise === 'no') entries = entries.filter(e => (e.exerciseTypes || []).length === 0);
+  if (f.text) entries = entries.filter(e => {
+    const haystack = [e.soulState, e.food, e.notes, ...(e.exerciseTypes||[]), ...(e.painZones||[]), ...(e.habits||[]), ...(e.supplements||[])].join(' ').toLowerCase();
+    return haystack.includes(f.text);
+  });
+
+  const container = document.getElementById('historyList');
+  if (entries.length === 0) {
+    container.innerHTML = `<div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 15s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+      <p>Aucune entrée trouvée</p>
+      <button class="btn btn-primary btn-sm" onclick="navigate('today')">Créer une entrée</button>
+    </div>`;
+    return;
+  }
+
+  const moodEmojis = ['','😫','😢','😞','😕','😐','🙂','😊','😄','🤩','🌟'];
+  container.innerHTML = entries.map(e => {
+    const d = new Date(e.date + 'T12:00:00');
+    const day = d.getDate();
+    const month = d.toLocaleDateString('fr-CA', { month:'short' });
+    const preview = e.soulState || e.notes || e.food || '—';
+    const ex = (e.exerciseTypes || []).join(', ');
+    return `<div class="history-item" onclick="viewEntry('${e.date}')">
+      <div class="history-date"><div class="day">${day}</div><div class="month">${month}</div></div>
+      <div class="history-info">
+        <div class="history-mood">${moodEmojis[e.mood] || '😐'} ${e.mood}/10 ${ex ? '· ' + ex : ''}</div>
+        <div class="history-preview">${preview}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function viewEntry(date) {
+  viewingEntryDate = date;
+  const entry = await dbGet(date);
+  if (!entry) return;
+  document.getElementById('entryModalTitle').textContent = formatDateFR(date);
+
+  const moodEmojis = ['','😫','😢','😞','😕','😐','🙂','😊','😄','🤩','🌟'];
+  let html = `
+    <div class="flex-between mb-8"><span class="text-muted">Humeur</span><strong>${moodEmojis[entry.mood]} ${entry.mood}/10</strong></div>
+    <div class="flex-between mb-8"><span class="text-muted">Poids</span><strong>${entry.weight ? entry.weight + ' lbs' : '—'}</strong></div>
+    <div class="flex-between mb-8"><span class="text-muted">Douleur</span><strong>${entry.pain}/10${(entry.painZones||[]).length ? ' · '+ entry.painZones.join(', ') : ''}</strong></div>
+    <div class="flex-between mb-8"><span class="text-muted">Exercice</span><strong>${(entry.exerciseTypes||[]).join(', ') || '—'}${entry.exerciseDuration ? ' · '+entry.exerciseDuration+'min' : ''}</strong></div>`;
+  if (entry.habits?.length) html += `<div class="mb-8"><span class="text-muted text-sm">Habitudes:</span> <span class="text-sm">${entry.habits.join(', ')}</span></div>`;
+  if (entry.supplements?.length) html += `<div class="mb-8"><span class="text-muted text-sm">Suppléments:</span> <span class="text-sm">${entry.supplements.join(', ')}</span></div>`;
+  if (entry.soulState) html += `<div class="divider"></div><p class="text-sm"><strong>État d'âme:</strong> ${entry.soulState}</p>`;
+  if (entry.food) html += `<div class="divider"></div><p class="text-sm"><strong>Alimentation:</strong> ${entry.food}</p>`;
+  if (entry.notes) html += `<div class="divider"></div><p class="text-sm"><strong>Notes:</strong> ${entry.notes}</p>`;
+
+  document.getElementById('entryModalContent').innerHTML = html;
+  openModal('entryModal');
+}
+
+function editEntryFromModal() {
+  closeModal('entryModal');
+  if (isDirty && !confirm('Modifications non sauvegardées. Continuer?')) return;
+  currentDate = new Date(viewingEntryDate + 'T12:00:00');
+  navigate('today');
+  loadDay();
+}
+
+async function deleteEntryFromModal() {
+  if (!confirm('Supprimer cette entrée?')) return;
+  await dbDelete(viewingEntryDate);
+  closeModal('entryModal');
+  showToast('Entrée supprimée');
+  loadHistory();
+}
+
+// ============================================================
+// STATS & CHARTS
+// ============================================================
+async function loadStats() {
+  const entries = await dbGetAll();
+  if (entries.length === 0) {
+    document.getElementById('statAvgMood').textContent = '—';
+    document.getElementById('statAvgWeight').textContent = '—';
+    document.getElementById('statExDays').textContent = '0';
+    document.getElementById('statTotal').textContent = '0';
+    document.getElementById('insightsContainer').innerHTML = '';
+    return;
+  }
+
+  const moods = entries.filter(e => e.mood).map(e => e.mood);
+  const weights = entries.filter(e => e.weight).map(e => e.weight);
+  const exDays = entries.filter(e => (e.exerciseTypes||[]).length > 0).length;
+
+  document.getElementById('statAvgMood').textContent = moods.length ? (moods.reduce((a,b)=>a+b,0)/moods.length).toFixed(1) : '—';
+  document.getElementById('statAvgWeight').textContent = weights.length ? (weights.reduce((a,b)=>a+b,0)/weights.length).toFixed(1) : '—';
+  document.getElementById('statExDays').textContent = exDays;
+  document.getElementById('statTotal').textContent = entries.length;
+
+  // Generate insights
+  generateInsights(entries);
+
+  // Charts — last 30 days
+  const sorted = [...entries].sort((a,b) => a.date.localeCompare(b.date));
+  const last30 = sorted.slice(-30);
+  drawChart('moodChart', last30.map(e => e.date), last30.map(e => e.mood), 'Humeur', '#4a7c2e', 1, 10);
+  const withWeight = last30.filter(e => e.weight);
+  drawChart('weightChart', withWeight.map(e => e.date), withWeight.map(e => e.weight), 'Poids', '#3a7ca5');
+  drawChart('exerciseChart', last30.map(e => e.date), last30.map(e => e.exerciseDuration || 0), 'Minutes', '#c49b2a', 0);
+}
+
+function drawChart(canvasId, labels, data, label, color, minY, maxY) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+  const pad = { top:20, right:12, bottom:28, left:36 };
+  const plotW = W - pad.left - pad.right;
+  const plotH = H - pad.top - pad.bottom;
+
+  ctx.clearRect(0, 0, W, H);
+
+  if (data.length < 2) {
+    ctx.fillStyle = '#9a8b78';
+    ctx.font = '13px DM Sans';
+    ctx.textAlign = 'center';
+    ctx.fillText('Pas assez de données', W/2, H/2);
+    return;
+  }
+
+  const mn = minY !== undefined ? minY : Math.min(...data.filter(d=>d!=null)) * 0.95;
+  const mx = maxY !== undefined ? maxY : Math.max(...data.filter(d=>d!=null)) * 1.05;
+  const range = mx - mn || 1;
+
+  function x(i) { return pad.left + (i / (data.length - 1)) * plotW; }
+  function y(v) { return pad.top + plotH - ((v - mn) / range) * plotH; }
+
+  // Grid lines
+  ctx.strokeStyle = '#e2d9ca';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 4; i++) {
+    const yy = pad.top + (i / 4) * plotH;
+    ctx.beginPath(); ctx.moveTo(pad.left, yy); ctx.lineTo(W - pad.right, yy); ctx.stroke();
+    ctx.fillStyle = '#9a8b78'; ctx.font = '10px DM Sans'; ctx.textAlign = 'right';
+    ctx.fillText((mx - (i/4)*range).toFixed(range > 20 ? 0 : 1), pad.left - 6, yy + 3);
+  }
+
+  // X labels
+  ctx.fillStyle = '#9a8b78'; ctx.font = '9px DM Sans'; ctx.textAlign = 'center';
+  const step = Math.max(1, Math.floor(labels.length / 6));
+  for (let i = 0; i < labels.length; i += step) {
+    const d = new Date(labels[i] + 'T12:00:00');
+    ctx.fillText(d.getDate() + '/' + (d.getMonth()+1), x(i), H - 6);
+  }
+
+  // Area fill
+  ctx.beginPath();
+  ctx.moveTo(x(0), y(data[0]));
+  for (let i = 1; i < data.length; i++) ctx.lineTo(x(i), y(data[i]));
+  ctx.lineTo(x(data.length-1), pad.top + plotH);
+  ctx.lineTo(x(0), pad.top + plotH);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotH);
+  grad.addColorStop(0, color + '30');
+  grad.addColorStop(1, color + '05');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  ctx.moveTo(x(0), y(data[0]));
+  for (let i = 1; i < data.length; i++) ctx.lineTo(x(i), y(data[i]));
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  // Dots
+  for (let i = 0; i < data.length; i++) {
+    ctx.beginPath();
+    ctx.arc(x(i), y(data[i]), 3, 0, Math.PI*2);
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+}
+
+// ============================================================
+// INSIGHTS (INTELLIGENCE)
+// ============================================================
+function generateInsights(entries) {
+  const container = document.getElementById('insightsContainer');
+  const insights = [];
+  const sorted = [...entries].sort((a,b) => a.date.localeCompare(b.date));
+  const last7 = sorted.slice(-7);
+  const prev7 = sorted.slice(-14, -7);
+
+  // Mood trend
+  if (last7.length >= 3) {
+    const avgRecent = last7.reduce((s,e) => s + (e.mood||0), 0) / last7.length;
+    if (prev7.length >= 3) {
+      const avgPrev = prev7.reduce((s,e) => s + (e.mood||0), 0) / prev7.length;
+      const diff = avgRecent - avgPrev;
+      if (diff >= 1.5) insights.push({ type:'good', title:'Humeur en hausse 📈', text:`Ton humeur moyenne est passée de ${avgPrev.toFixed(1)} à ${avgRecent.toFixed(1)} cette semaine. Continue!` });
+      else if (diff <= -1.5) insights.push({ type:'warning', title:'Humeur en baisse 📉', text:`Ton humeur moyenne a chuté de ${avgPrev.toFixed(1)} à ${avgRecent.toFixed(1)}. Prends soin de toi.` });
+    }
+    if (avgRecent <= 3) insights.push({ type:'warning', title:'Humeur basse', text:'Ta moyenne des 7 derniers jours est faible. N\'hésite pas à en parler à quelqu\'un de confiance.' });
+  }
+
+  // Exercise pattern
+  if (last7.length >= 5) {
+    const exDays = last7.filter(e => (e.exerciseTypes||[]).length > 0).length;
+    if (exDays === 0) insights.push({ type:'warning', title:'Pas d\'exercice récent 🏃', text:'Aucun exercice cette semaine. Même 15 minutes de marche font une différence!' });
+    else if (exDays >= 5) insights.push({ type:'good', title:'Régularité exercice 💪', text:`${exDays} jours d'exercice cette semaine. Excellent rythme!` });
+  }
+
+  // Weight change
+  const weights = sorted.filter(e => e.weight).slice(-14);
+  if (weights.length >= 4) {
+    const first = weights.slice(0, Math.floor(weights.length/2));
+    const second = weights.slice(Math.floor(weights.length/2));
+    const avgFirst = first.reduce((s,e) => s+e.weight, 0) / first.length;
+    const avgSecond = second.reduce((s,e) => s+e.weight, 0) / second.length;
+    const diff = avgSecond - avgFirst;
+    if (Math.abs(diff) >= 2) {
+      insights.push({ type: diff > 0 ? 'warning' : 'good', title:`Poids ${diff > 0 ? 'en hausse' : 'en baisse'} ⚖️`, text:`Variation de ${Math.abs(diff).toFixed(1)} lbs ces 2 dernières semaines.` });
+    }
+  }
+
+  // Pain correlation with exercise
+  const painEntries = sorted.filter(e => e.pain > 3).slice(-10);
+  if (painEntries.length >= 3) {
+    const zones = {};
+    painEntries.forEach(e => (e.painZones||[]).forEach(z => { zones[z] = (zones[z]||0)+1; }));
+    const topZone = Object.entries(zones).sort((a,b) => b[1]-a[1])[0];
+    if (topZone) insights.push({ type:'warning', title:'Zone de douleur récurrente', text:`"${topZone[0]}" revient souvent dans tes douleurs (${topZone[1]} fois récemment).` });
+  }
+
+  // Streaks
+  const today = dateStr(new Date());
+  let streak = 0;
+  const d = new Date();
+  for (let i = 0; i < 365; i++) {
+    const ds = dateStr(d);
+    if (sorted.find(e => e.date === ds)) { streak++; d.setDate(d.getDate()-1); }
+    else break;
+  }
+  if (streak >= 3) insights.push({ type:'good', title:`🔥 Série de ${streak} jours`, text:'Tu remplis ton journal régulièrement. Bravo!' });
+
+  container.innerHTML = insights.length ? insights.map(i =>
+    `<div class="insight-card ${i.type === 'warning' ? 'warning' : ''}">
+      <div class="insight-title">${i.title}</div>
+      <div class="insight-text">${i.text}</div>
+    </div>`
+  ).join('') : '<div class="card"><p class="text-sm text-muted">Continue à remplir ton journal pour recevoir des analyses personnalisées.</p></div>';
+}
+
+// ============================================================
+// EXPORT / IMPORT
+// ============================================================
+async function exportData() {
+  const entries = await dbGetAll();
+  const data = { version:2, exportedAt:new Date().toISOString(), entries };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `journal-v2-${dateStr(new Date())}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  localStorage.setItem('lastExport', new Date().toISOString());
+  showToast('Export téléchargé ✓');
+  loadSettings();
+}
+
+document.getElementById('importFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    const entries = data.entries || data;
+    if (!Array.isArray(entries)) throw new Error('Format invalide');
+
+    const mode = document.getElementById('importMode').value;
+    let count = 0;
+
+    if (mode === 'replace') {
+      if (!confirm('Ceci va REMPLACER toutes tes données. Continuer?')) return;
+      await dbClear();
+      for (const entry of entries) { await dbPut(entry); count++; }
+    } else if (mode === 'missing') {
+      for (const entry of entries) {
+        const existing = await dbGet(entry.date);
+        if (!existing) { await dbPut(entry); count++; }
+      }
+    } else { // merge
+      for (const entry of entries) {
+        const existing = await dbGet(entry.date);
+        if (!existing || new Date(entry.updatedAt) > new Date(existing.updatedAt || 0)) {
+          await dbPut(entry); count++;
+        }
+      }
+    }
+
+    showToast(`${count} entrées importées ✓`);
+    loadDay();
+    loadSettings();
+  } catch (err) {
+    showToast('Erreur: ' + err.message);
+  }
+  e.target.value = '';
+});
+
+async function loadSettings() {
+  const entries = await dbGetAll();
+  const lastExport = localStorage.getItem('lastExport');
+  document.getElementById('lastExportInfo').textContent = lastExport
+    ? 'Dernier export: ' + formatDateFR(lastExport.split('T')[0])
+    : 'Aucun export effectué';
+
+  const weights = entries.filter(e => e.weight);
+  const dates = entries.map(e => e.date).sort();
+  document.getElementById('dbStats').innerHTML = `
+    <div class="flex-between mb-8"><span class="text-muted">Entrées totales</span><strong>${entries.length}</strong></div>
+    <div class="flex-between mb-8"><span class="text-muted">Première entrée</span><strong>${dates[0] ? shortDateFR(dates[0]) : '—'}</strong></div>
+    <div class="flex-between mb-8"><span class="text-muted">Dernière entrée</span><strong>${dates[dates.length-1] ? shortDateFR(dates[dates.length-1]) : '—'}</strong></div>
+    <div class="flex-between"><span class="text-muted">Poids min/max</span><strong>${weights.length ? Math.min(...weights.map(e=>e.weight)).toFixed(1) + ' / ' + Math.max(...weights.map(e=>e.weight)).toFixed(1) + ' lbs' : '—'}</strong></div>
+  `;
+}
+
+async function confirmDeleteAll() {
+  if (!confirm('⚠️ Supprimer TOUTES les données? Cette action est irréversible.')) return;
+  if (!confirm('Vraiment sûr? Dernière chance!')) return;
+  await dbClear();
+  showToast('Toutes les données supprimées');
+  loadDay();
+  loadSettings();
+}
+
+// ============================================================
+// BACKUP REMINDER
+// ============================================================
+function checkBackupReminder() {
+  const lastExport = localStorage.getItem('lastExport');
+  const banner = document.getElementById('backupBanner');
+  if (!lastExport) { banner.classList.remove('hidden'); return; }
+  const daysSince = (Date.now() - new Date(lastExport).getTime()) / (1000*60*60*24);
+  banner.classList.toggle('hidden', daysSince < 7);
+}
+function dismissBackup() { document.getElementById('backupBanner').classList.add('hidden'); }
+
+// ============================================================
+// LEAVE WARNING
+// ============================================================
+window.addEventListener('beforeunload', (e) => {
+  if (isDirty) { e.preventDefault(); e.returnValue = ''; }
+});
+
+// ============================================================
+// INIT
+// ============================================================
+async function init() {
+  await openDB();
+  loadDay();
+}
+
+// Window resize redraw charts
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if (document.getElementById('pageStats').classList.contains('active')) loadStats();
+  }, 200);
+});
+
+init();
+
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
