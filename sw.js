@@ -1,4 +1,4 @@
-const CACHE_NAME = 'journal-v2-cache-v1';
+const CACHE_NAME = 'journal-v2-cache-v2';
 const URLS_TO_CACHE = [
   './',
   './index.html',
@@ -33,6 +33,18 @@ self.addEventListener('fetch', event => {
         return response;
       }).catch(() => cached);
       return cached || fetchPromise;
+    })
+  );
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+      for (const client of clientList) {
+        if (client.url.includes('journal') && 'focus' in client) return client.focus();
+      }
+      if (clients.openWindow) return clients.openWindow('./');
     })
   );
 });
