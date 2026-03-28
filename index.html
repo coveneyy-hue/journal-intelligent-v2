@@ -955,33 +955,33 @@ function navigate(page) {
 // ============================================================
 // DATE NAVIGATION
 // ============================================================
-function goToToday() {
+async function goToToday() {
   if (isDirty && !confirm('Modifications non sauvegardées. Continuer?')) return;
   currentDate = new Date();
-  loadDay();
+  await loadDay();
 }
 
-function goToDate(ds) {
+async function goToDate(ds) {
   if (isDirty && !confirm('Modifications non sauvegardées. Continuer?')) return;
   currentDate = new Date(ds + 'T12:00:00');
   navigate('today');
-  loadDay();
+  await loadDay();
 }
 
-function changeDay(delta) {
+async function changeDay(delta) {
   if (isDirty && !confirm('Modifications non sauvegardées. Continuer?')) return;
   currentDate.setDate(currentDate.getDate() + delta);
-  loadDay();
+  await loadDay();
 }
 
 function jumpToDate() {
   const input = document.createElement('input');
   input.type = 'date';
   input.value = dateStr(currentDate);
-  input.onchange = () => {
+  input.onchange = async () => {
     if (isDirty && !confirm('Modifications non sauvegardées. Continuer?')) return;
     currentDate = new Date(input.value + 'T12:00:00');
-    loadDay();
+    await loadDay();
   };
   input.showPicker?.() || input.click();
 }
@@ -1025,22 +1025,10 @@ async function loadDay() {
     document.getElementById('watching').value = entry.watching || '';
     document.getElementById('fear').value = entry.fear || '';
     document.getElementById('notes').value = entry.notes || '';
-    (entry.exerciseTypes || []).forEach(v => {
-      const t = document.querySelector(`#exerciseTags .tag[data-val="${v}"]`);
-      if (t) t.classList.add('active');
-    });
-    (entry.painZones || []).forEach(v => {
-      const t = document.querySelector(`#painZones .pain-zone[data-val="${v}"]`);
-      if (t) t.classList.add('active');
-    });
-    (entry.habits || []).forEach(v => {
-      const t = document.querySelector(`#habitTags .tag[data-val="${v}"]`);
-      if (t) t.classList.add('active');
-    });
-    (entry.supplements || []).forEach(v => {
-      const t = document.querySelector(`#supplementTags .tag[data-val="${v}"]`);
-      if (t) t.classList.add('active');
-    });
+    restoreTags('exerciseTags', 'tag', entry.exerciseTypes || []);
+    restoreTags('painZones', 'pain-zone', entry.painZones || []);
+    restoreTags('habitTags', 'tag', entry.habits || []);
+    restoreTags('supplementTags', 'tag', entry.supplements || []);
   }
 
   updateSliderDisplays();
@@ -1169,6 +1157,18 @@ function updateCompletion() {
 function toggleTag(el) {
   el.classList.toggle('active');
   onFieldChange();
+}
+
+function restoreTags(containerId, className, values) {
+  if (!values || !values.length) return;
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const tags = container.getElementsByClassName(className);
+  for (let i = 0; i < tags.length; i++) {
+    if (values.includes(tags[i].dataset.val)) {
+      tags[i].classList.add('active');
+    }
+  }
 }
 
 function scrollToField(id) {
@@ -1483,12 +1483,12 @@ async function viewEntry(date) {
   openModal('entryModal');
 }
 
-function editEntryFromModal() {
+async function editEntryFromModal() {
   closeModal('entryModal');
   if (isDirty && !confirm('Modifications non sauvegardées. Continuer?')) return;
   currentDate = new Date(viewingEntryDate + 'T12:00:00');
   navigate('today');
-  loadDay();
+  await loadDay();
 }
 
 async function deleteEntryFromModal() {
@@ -1732,7 +1732,7 @@ document.getElementById('importFile').addEventListener('change', async (e) => {
     }
 
     showToast(`${count} entrées importées ✓`);
-    loadDay();
+    await loadDay();
     loadSettings();
   } catch (err) {
     showToast('Erreur: ' + err.message);
@@ -1762,7 +1762,7 @@ async function confirmDeleteAll() {
   if (!confirm('Vraiment sûr? Dernière chance!')) return;
   await dbClear();
   showToast('Toutes les données supprimées');
-  loadDay();
+  await loadDay();
   loadSettings();
 }
 
@@ -1790,7 +1790,7 @@ window.addEventListener('beforeunload', (e) => {
 // ============================================================
 async function init() {
   await openDB();
-  loadDay();
+  await loadDay();
 }
 
 // Window resize redraw charts
