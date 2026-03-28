@@ -880,7 +880,10 @@ const WIZARD_STEPS = ['humeur','poids','exercice','douleur','etat','habitudes','
 
 function dateStr(d) {
   const dd = d instanceof Date ? d : new Date(d);
-  return dd.toISOString().split('T')[0];
+  const y = dd.getFullYear();
+  const m = String(dd.getMonth() + 1).padStart(2, '0');
+  const day = String(dd.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 function formatDateFR(str) {
