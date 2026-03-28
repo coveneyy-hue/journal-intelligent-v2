@@ -243,6 +243,7 @@ input[type="range"]::-webkit-slider-thumb {
 }
 .save-indicator.saved { background:var(--accent-light); color:var(--accent); }
 .save-indicator.unsaved { background:var(--coral-light); color:var(--coral); animation:pulse 1.5s infinite; }
+.save-indicator.empty { background:var(--bg2); color:var(--text3); }
 @keyframes pulse { 50%{opacity:.6} }
 
 body { padding-top:calc(var(--safe-top) + 52px); }
@@ -380,7 +381,7 @@ canvas { width:100%!important; height:100%!important; }
 <div class="status-bar">
   <div class="status-left">📓 Journal v2</div>
   <div class="status-right">
-    <span id="saveIndicator" class="save-indicator saved">✓ Sauvé</span>
+    <span id="saveIndicator" class="save-indicator empty">— Nouveau</span>
     <button class="btn-ghost btn-icon" onclick="saveEntry()" title="Sauvegarder" id="saveBtn">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
     </button>
@@ -978,7 +979,7 @@ async function loadDay() {
   updateSliderDisplays();
   updateTiles();
   updateCompletion();
-  setDirty(false);
+  setDirty(entry ? false : 'empty');
   checkBackupReminder();
 }
 
@@ -995,7 +996,11 @@ function onFieldChange() {
 function setDirty(v) {
   isDirty = v;
   const ind = document.getElementById('saveIndicator');
-  if (v) {
+  if (v === 'empty') {
+    isDirty = false;
+    ind.textContent = '— Nouveau';
+    ind.className = 'save-indicator empty';
+  } else if (v) {
     ind.textContent = '● Non sauvé';
     ind.className = 'save-indicator unsaved';
   } else {
