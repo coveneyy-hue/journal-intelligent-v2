@@ -426,6 +426,11 @@ canvas { width:100%!important; height:100%!important; }
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
     </button>
   </div>
+  <div style="text-align:center;margin-top:-10px;margin-bottom:10px">
+    <button class="btn btn-sm btn-secondary" id="btnToday" onclick="goToToday()" style="display:none;font-size:.75rem;padding:4px 12px">
+      ↺ Aujourd'hui
+    </button>
+  </div>
 
   <!-- Completion -->
   <div class="completion-bar"><div class="completion-fill" id="completionBar" style="width:0%"></div></div>
@@ -915,6 +920,19 @@ function navigate(page) {
 // ============================================================
 // DATE NAVIGATION
 // ============================================================
+function goToToday() {
+  if (isDirty && !confirm('Modifications non sauvegardées. Continuer?')) return;
+  currentDate = new Date();
+  loadDay();
+}
+
+function goToDate(ds) {
+  if (isDirty && !confirm('Modifications non sauvegardées. Continuer?')) return;
+  currentDate = new Date(ds + 'T12:00:00');
+  navigate('today');
+  loadDay();
+}
+
 function changeDay(delta) {
   if (isDirty && !confirm('Modifications non sauvegardées. Continuer?')) return;
   currentDate.setDate(currentDate.getDate() + delta);
@@ -939,6 +957,7 @@ async function loadDay() {
   document.getElementById('currentDateLabel').textContent = formatDateFR(ds);
   document.getElementById('todayTitle').textContent = ds === today ? "Aujourd'hui" : formatDateFR(ds);
   document.getElementById('todayDate').textContent = ds === today ? formatDateFR(ds) : '';
+  document.getElementById('btnToday').style.display = ds === today ? 'none' : '';
 
   // Reset form
   document.getElementById('mood').value = 5;
@@ -1242,13 +1261,15 @@ async function loadComparison(type) {
     { label: 'Exercice', key: 'exerciseDuration', suffix: ' min' },
   ];
 
+  const openIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+
   let html = `<div class="compare-columns">
-    <div class="compare-col"><h3>${shortDateFR(ds)}</h3>`;
+    <div class="compare-col"><h3 style="display:flex;align-items:center;justify-content:space-between">${shortDateFR(ds)} <a onclick="goToDate('${ds}')" style="cursor:pointer;color:var(--accent)">${openIcon}</a></h3>`;
   fields.forEach(f => {
     const v = current?.[f.key];
     html += `<div class="compare-row"><span>${f.label}</span><span>${v != null ? v + f.suffix : '—'}</span></div>`;
   });
-  html += `</div><div class="compare-col"><h3>${shortDateFR(compareDs)}</h3>`;
+  html += `</div><div class="compare-col"><h3 style="display:flex;align-items:center;justify-content:space-between">${shortDateFR(compareDs)} <a onclick="goToDate('${compareDs}')" style="cursor:pointer;color:var(--accent)">${openIcon}</a></h3>`;
   fields.forEach(f => {
     const v = compare?.[f.key];
     html += `<div class="compare-row"><span>${f.label}</span><span>${v != null ? v + f.suffix : '—'}</span></div>`;
