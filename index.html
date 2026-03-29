@@ -285,13 +285,25 @@ canvas { width:100%!important; height:100%!important; }
 
 /* Toast */
 .toast {
-  position:fixed; top:calc(var(--safe-top) + 56px); left:50%; transform:translateX(-50%) translateY(-120%);
-  padding:10px 20px; border-radius:var(--radius-sm);
-  background:var(--text); color:var(--bg); font-size:.85rem; font-weight:500;
-  z-index:300; transition:transform .3s ease; white-space:nowrap;
-  box-shadow:var(--shadow-lg);
+  position: fixed;
+  top: calc(var(--safe-top) + 56px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  background: var(--text);
+  color: var(--bg);
+  font-size: .85rem;
+  font-weight: 500;
+  z-index: 300;
+  white-space: nowrap;
+  box-shadow: var(--shadow-lg);
+  display: none;
 }
-.toast.show { transform:translateX(-50%) translateY(0); }
+
+.toast.show {
+  display: block;
+}
 
 /* Guided wizard */
 .wizard-progress { display:flex; gap:4px; margin-bottom:20px; }
