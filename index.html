@@ -494,7 +494,10 @@ canvas { width:100%!important; height:100%!important; }
       <span class="tag" data-val="Vélo" onclick="toggleTag(this,'exercise')">🚴 Vélo</span>
       <span class="tag" data-val="Musculation" onclick="toggleTag(this,'exercise')">🏋️ Muscu</span>
       <span class="tag" data-val="Ski" onclick="toggleTag(this,'exercise')">⛷️ Ski</span>
-      <span class="tag" data-val="Patin" onclick="toggleTag(this,'exercise')">⛸️ Patin</span>
+      <span class="tag" data-val="Pushup" onclick="toggleTag(this,'exercise')">💪 Pushup</span>
+      <span class="tag" data-val="Biceps" onclick="toggleTag(this,'exercise')">💪 Biceps</span>
+      <span class="tag" data-val="Épaules" onclick="toggleTag(this,'exercise')">🏋️ Épaules</span>
+      <span class="tag" data-val="Pecs" onclick="toggleTag(this,'exercise')">🏋️ Pecs</span>
     </div>
     <div class="exercise-row">
       <div class="form-group">
@@ -559,12 +562,11 @@ canvas { width:100%!important; height:100%!important; }
       Habitudes
     </div>
     <div class="tags" id="habitTags">
-      <span class="tag" data-val="Méditation" onclick="toggleTag(this,'habit')">🧘 Méditation</span>
-      <span class="tag" data-val="Lecture" onclick="toggleTag(this,'habit')">📖 Lecture</span>
-      <span class="tag" data-val="Eau 2L" onclick="toggleTag(this,'habit')">💧 Eau 2L</span>
-      <span class="tag" data-val="Bon sommeil" onclick="toggleTag(this,'habit')">😴 Bon sommeil</span>
+      <span class="tag" data-val="Hydratation" onclick="toggleTag(this,'habit')">💧 Hydratation</span>
+      <span class="tag" data-val="Sommeil 7h consécutif" onclick="toggleTag(this,'habit')">😴 Sommeil 7h consécutif</span>
       <span class="tag" data-val="Pas d'alcool" onclick="toggleTag(this,'habit')">🚫 Pas d'alcool</span>
       <span class="tag" data-val="Gratitude" onclick="toggleTag(this,'habit')">🙏 Gratitude</span>
+      <span class="tag" data-val="2 repas/jour" onclick="toggleTag(this,'habit')">🍽️ 2 repas/jour</span>
     </div>
   </div>
 
@@ -618,6 +620,15 @@ canvas { width:100%!important; height:100%!important; }
       Plus grande peur
     </div>
     <input type="text" class="form-input" id="fear" placeholder="Ce qui t'inquiète le plus..." oninput="onFieldChange()">
+  </div>
+
+  <!-- MOTIVATION -->
+  <div class="card" id="field-motivation">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      Motivation
+    </div>
+    <textarea class="form-textarea" id="motivation" placeholder="Qu'est-ce qui te motive aujourd'hui?" oninput="onFieldChange()"></textarea>
   </div>
 
   <!-- NOTES -->
@@ -916,7 +927,7 @@ let currentDate = new Date();
 let isDirty = false;
 let viewingEntryDate = null;
 let wizardStep = 0;
-const WIZARD_STEPS = ['humeur','poids','exercice','douleur','etat','habitudes','alimentation','supplements','chanson','watching','peur','notes'];
+const WIZARD_STEPS = ['humeur','poids','exercice','douleur','etat','habitudes','alimentation','supplements','chanson','watching','peur','motivation','notes'];
 
 function dateStr(d) {
   const dd = d instanceof Date ? d : new Date(d);
@@ -1007,6 +1018,7 @@ async function loadDay() {
   document.getElementById('song').value = '';
   document.getElementById('watching').value = '';
   document.getElementById('fear').value = '';
+  document.getElementById('motivation').value = '';
   document.getElementById('notes').value = '';
   document.querySelectorAll('.tag.active, .pain-zone.active').forEach(t => t.classList.remove('active'));
 
@@ -1024,6 +1036,7 @@ async function loadDay() {
     document.getElementById('song').value = entry.song || '';
     document.getElementById('watching').value = entry.watching || '';
     document.getElementById('fear').value = entry.fear || '';
+    document.getElementById('motivation').value = entry.motivation || '';
     document.getElementById('notes').value = entry.notes || '';
     restoreTags('exerciseTags', 'tag', entry.exerciseTypes || []);
     restoreTags('painZones', 'pain-zone', entry.painZones || []);
@@ -1098,6 +1111,7 @@ function collectEntry() {
     song: document.getElementById('song').value.trim(),
     watching: document.getElementById('watching').value.trim(),
     fear: document.getElementById('fear').value.trim(),
+    motivation: document.getElementById('motivation').value.trim(),
     supplements: getActiveTags('supplementTags'),
     notes: document.getElementById('notes').value.trim(),
     updatedAt: new Date().toISOString()
@@ -1147,6 +1161,7 @@ function updateCompletion() {
     !!document.getElementById('song').value.trim(),
     !!document.getElementById('watching').value.trim(),
     !!document.getElementById('fear').value.trim(),
+    !!document.getElementById('motivation').value.trim(),
     !!document.getElementById('notes').value.trim()
   ];
   const pct = Math.round(fields.filter(Boolean).length / fields.length * 100);
@@ -1212,7 +1227,7 @@ function renderWizard() {
   document.getElementById('wizPrev').style.display = wizardStep === 0 ? 'none' : '';
   document.getElementById('wizNext').textContent = wizardStep === steps.length - 1 ? 'Terminer' : 'Suivant';
 
-  const stepNames = ['😊 Humeur','⚖️ Poids','🏃 Exercice','💢 Douleur','💭 État d\'âme','✅ Habitudes','🍽️ Alimentation','💊 Suppléments','🎵 Chanson','🎬 Film/Série','🔔 Peur','📝 Notes'];
+  const stepNames = ['😊 Humeur','⚖️ Poids','🏃 Exercice','💢 Douleur','💭 État d\'âme','✅ Habitudes','🍽️ Alimentation','💊 Suppléments','🎵 Chanson','🎬 Film/Série','🔔 Peur','⭐ Motivation','📝 Notes'];
   document.getElementById('wizardTitle').textContent = stepNames[wizardStep] || 'Mode guidé';
 
   const content = document.getElementById('wizardContent');
@@ -1279,6 +1294,9 @@ function renderWizard() {
     html = `<p class="text-muted mb-8">Ta plus grande peur en ce moment?</p>
       <input type="text" class="form-input" value="${document.getElementById('fear').value}" placeholder="Ce qui t'inquiète le plus..."
         oninput="document.getElementById('fear').value=this.value;onFieldChange()">`;
+  } else if (s === 'motivation') {
+    html = `<p class="text-muted mb-8">Qu'est-ce qui te motive?</p>
+      <textarea class="form-textarea" rows="4" oninput="document.getElementById('motivation').value=this.value;onFieldChange()">${document.getElementById('motivation').value}</textarea>`;
   } else if (s === 'notes') {
     html = `<p class="text-muted mb-8">Autre chose à noter?</p>
       <textarea class="form-textarea" rows="4" oninput="document.getElementById('notes').value=this.value;onFieldChange()">${document.getElementById('notes').value}</textarea>`;
@@ -1427,7 +1445,7 @@ async function loadHistory() {
   if (f.exercise === 'yes') entries = entries.filter(e => (e.exerciseTypes || []).length > 0);
   else if (f.exercise === 'no') entries = entries.filter(e => (e.exerciseTypes || []).length === 0);
   if (f.text) entries = entries.filter(e => {
-    const haystack = [e.soulState, e.food, e.notes, e.song, e.watching, e.fear, ...(e.exerciseTypes||[]), ...(e.painZones||[]), ...(e.habits||[]), ...(e.supplements||[])].join(' ').toLowerCase();
+    const haystack = [e.soulState, e.food, e.notes, e.song, e.watching, e.fear, e.motivation, ...(e.exerciseTypes||[]), ...(e.painZones||[]), ...(e.habits||[]), ...(e.supplements||[])].join(' ').toLowerCase();
     return haystack.includes(f.text);
   });
 
@@ -1477,6 +1495,7 @@ async function viewEntry(date) {
   if (entry.song) html += `<div class="divider"></div><p class="text-sm"><strong>🎵 Chanson:</strong> ${entry.song}</p>`;
   if (entry.watching) html += `<div class="divider"></div><p class="text-sm"><strong>🎬 Film/Série:</strong> ${entry.watching}</p>`;
   if (entry.fear) html += `<div class="divider"></div><p class="text-sm"><strong>🔔 Plus grande peur:</strong> ${entry.fear}</p>`;
+  if (entry.motivation) html += `<div class="divider"></div><p class="text-sm"><strong>⭐ Motivation:</strong> ${entry.motivation}</p>`;
   if (entry.notes) html += `<div class="divider"></div><p class="text-sm"><strong>Notes:</strong> ${entry.notes}</p>`;
 
   document.getElementById('entryModalContent').innerHTML = html;
