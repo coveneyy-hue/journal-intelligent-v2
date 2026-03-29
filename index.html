@@ -242,12 +242,22 @@ input[type="range"]::-webkit-slider-thumb {
   font-size:.72rem; font-weight:600; padding:4px 10px;
   border-radius:12px; text-transform:uppercase; letter-spacing:.04em;
 }
-.save-indicator.saved { background:var(--accent-light); color:var(--accent); }
-.save-indicator.unsaved { background:var(--coral-light); color:var(--coral); animation:pulse 1.5s infinite; }
-.save-indicator.empty { background:var(--bg2); color:var(--text3); }
+.save-indicator.saved    { background:var(--accent-light); color:var(--accent); }
+.save-indicator.unsaved  { background:var(--coral-light); color:var(--coral); animation:pulse 1.5s infinite; }
+.save-indicator.empty    { background:var(--bg2); color:var(--text3); }
+.save-indicator.prefilled { background:var(--blue-light); color:var(--blue); }
 @keyframes pulse { 50%{opacity:.6} }
 
 body { padding-top:calc(var(--safe-top) + 52px); }
+
+/* Prefill banner */
+.prefill-banner {
+  background:var(--blue-light); border:1.5px solid var(--blue);
+  border-radius:var(--radius-sm); padding:10px 14px;
+  margin-bottom:14px; display:flex; align-items:center; gap:10px;
+  font-size:.82rem; color:var(--blue);
+}
+.prefill-banner svg { flex-shrink:0; }
 
 /* Completion bar */
 .completion-bar { height:4px; border-radius:2px; background:var(--bg3); margin:12px 0; overflow:hidden; }
@@ -300,10 +310,7 @@ canvas { width:100%!important; height:100%!important; }
   box-shadow: var(--shadow-lg);
   display: none;
 }
-
-.toast.show {
-  display: block;
-}
+.toast.show { display: block; }
 
 /* Guided wizard */
 .wizard-progress { display:flex; gap:4px; margin-bottom:20px; }
@@ -427,6 +434,12 @@ canvas { width:100%!important; height:100%!important; }
       <span class="text-sm">Dernière sauvegarde il y a plus de 7 jours</span>
     </div>
     <button class="btn btn-sm btn-secondary" onclick="navigate('settings');dismissBackup()">Exporter</button>
+  </div>
+
+  <!-- Prefill banner -->
+  <div id="prefillBanner" class="prefill-banner hidden">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    <span id="prefillBannerText">Prérempli depuis la dernière entrée</span>
   </div>
 
   <!-- Date navigation -->
@@ -1010,6 +1023,19 @@ function jumpToDate() {
   input.showPicker?.() || input.click();
 }
 
+// ============================================================
+// FIND LAST ENTRY BEFORE A DATE
+// ============================================================
+async function findLastEntry(beforeDateStr) {
+  const entries = await dbGetAll();
+  return entries
+    .filter(e => e.date < beforeDateStr)
+    .sort((a, b) => b.date.localeCompare(a.date))[0] || null;
+}
+
+// ============================================================
+// LOAD DAY
+// ============================================================
 async function loadDay() {
   const ds = dateStr(currentDate);
   const today = dateStr(new Date());
@@ -1018,7 +1044,7 @@ async function loadDay() {
   document.getElementById('todayDate').textContent = ds === today ? formatDateFR(ds) : '';
   document.getElementById('btnToday').style.display = ds === today ? 'none' : '';
 
-  // Reset form
+  // Reset form to blank defaults
   document.getElementById('mood').value = 5;
   document.getElementById('weight').value = '';
   document.getElementById('exerciseDuration').value = '';
@@ -1035,39 +1061,66 @@ async function loadDay() {
   document.getElementById('notes').value = '';
   document.querySelectorAll('.tag.active, .pain-zone.active').forEach(t => t.classList.remove('active'));
 
+  // Hide prefill banner by default
+  document.getElementById('prefillBanner').classList.add('hidden');
+
   const entry = await dbGet(ds);
+
   if (entry) {
-    document.getElementById('mood').value = entry.mood || 5;
-    document.getElementById('weight').value = entry.weight || '';
-    document.getElementById('exerciseDuration').value = entry.exerciseDuration || '';
-    document.getElementById('exerciseKm').value = entry.exerciseKm || '';
-    document.getElementById('exerciseSteps').value = entry.exerciseSteps || '';
-    document.getElementById('exerciseNotes').value = entry.exerciseNotes || '';
-    document.getElementById('pain').value = entry.pain || 0;
-    document.getElementById('soulState').value = entry.soulState || '';
-    document.getElementById('food').value = entry.food || '';
-    document.getElementById('song').value = entry.song || '';
-    document.getElementById('watching').value = entry.watching || '';
-    document.getElementById('fear').value = entry.fear || '';
-    document.getElementById('motivation').value = entry.motivation || '';
-    document.getElementById('notes').value = entry.notes || '';
-    restoreTags('exerciseTags', 'tag', entry.exerciseTypes || []);
-    restoreTags('painZones', 'pain-zone', entry.painZones || []);
-    restoreTags('habitTags', 'tag', entry.habits || []);
-    restoreTags('supplementTags', 'tag', entry.supplements || []);
+    // Existing entry — load as-is
+    populateForm(entry);
+    setDirty(false);
+  } else {
+    // No entry for this day — try to prefill from last entry
+    const lastEntry = await findLastEntry(ds);
+    if (lastEntry) {
+      populateForm(lastEntry);
+      // Show prefill banner with source date
+      document.getElementById('prefillBannerText').textContent =
+        `Prérempli depuis le ${formatDateFR(lastEntry.date)} — modifie et sauvegarde`;
+      document.getElementById('prefillBanner').classList.remove('hidden');
+      setDirty('prefilled');
+    } else {
+      setDirty('empty');
+    }
   }
 
   updateSliderDisplays();
   updateTiles();
   updateCompletion();
-  setDirty(entry ? false : 'empty');
   checkBackupReminder();
+}
+
+// ============================================================
+// POPULATE FORM FROM AN ENTRY OBJECT
+// ============================================================
+function populateForm(source) {
+  document.getElementById('mood').value = source.mood || 5;
+  document.getElementById('weight').value = source.weight || '';
+  document.getElementById('exerciseDuration').value = source.exerciseDuration || '';
+  document.getElementById('exerciseKm').value = source.exerciseKm || '';
+  document.getElementById('exerciseSteps').value = source.exerciseSteps || '';
+  document.getElementById('exerciseNotes').value = source.exerciseNotes || '';
+  document.getElementById('pain').value = source.pain || 0;
+  document.getElementById('soulState').value = source.soulState || '';
+  document.getElementById('food').value = source.food || '';
+  document.getElementById('song').value = source.song || '';
+  document.getElementById('watching').value = source.watching || '';
+  document.getElementById('fear').value = source.fear || '';
+  document.getElementById('motivation').value = source.motivation || '';
+  document.getElementById('notes').value = source.notes || '';
+  restoreTags('exerciseTags', 'tag', source.exerciseTypes || []);
+  restoreTags('painZones', 'pain-zone', source.painZones || []);
+  restoreTags('habitTags', 'tag', source.habits || []);
+  restoreTags('supplementTags', 'tag', source.supplements || []);
 }
 
 // ============================================================
 // FIELD CHANGES & SAVE
 // ============================================================
 function onFieldChange() {
+  // Hide prefill banner once user starts editing
+  document.getElementById('prefillBanner').classList.add('hidden');
   setDirty(true);
   updateSliderDisplays();
   updateTiles();
@@ -1075,16 +1128,21 @@ function onFieldChange() {
 }
 
 function setDirty(v) {
-  isDirty = v;
   const ind = document.getElementById('saveIndicator');
   if (v === 'empty') {
     isDirty = false;
     ind.textContent = '— Nouveau';
     ind.className = 'save-indicator empty';
+  } else if (v === 'prefilled') {
+    isDirty = true;
+    ind.textContent = '↩ Prérempli';
+    ind.className = 'save-indicator prefilled';
   } else if (v) {
+    isDirty = true;
     ind.textContent = '● Non sauvé';
     ind.className = 'save-indicator unsaved';
   } else {
+    isDirty = false;
     ind.textContent = '✓ Sauvé';
     ind.className = 'save-indicator saved';
   }
@@ -1095,7 +1153,6 @@ function updateSliderDisplays() {
   const painVal = document.getElementById('pain').value;
   document.getElementById('moodDisplay').textContent = moodVal;
   document.getElementById('painDisplay').textContent = painVal;
-  // Position slider values
   const moodPct = (moodVal - 1) / 9 * 100;
   document.getElementById('moodDisplay').style.left = `calc(${moodPct}% + ${(50 - moodPct) * 0.28}px)`;
   const painPct = painVal / 10 * 100;
@@ -1134,6 +1191,7 @@ function collectEntry() {
 async function saveEntry() {
   const entry = collectEntry();
   await dbPut(entry);
+  document.getElementById('prefillBanner').classList.add('hidden');
   setDirty(false);
   showToast('Sauvegardé ✓');
   updateAppBadge();
@@ -1231,7 +1289,6 @@ function closeWizard() { closeModal('wizardModal'); }
 
 function renderWizard() {
   const steps = WIZARD_STEPS;
-  // Progress dots
   let dots = '';
   steps.forEach((_, i) => {
     dots += `<div class="wizard-dot ${i < wizardStep ? 'done' : ''} ${i === wizardStep ? 'current' : ''}"></div>`;
@@ -1349,7 +1406,6 @@ async function loadComparison(type) {
     if (!compareDs) return;
   }
 
-  // Highlight active button
   document.getElementById('compareWeekBtn').classList.toggle('btn-primary', type === 'week');
   document.getElementById('compareWeekBtn').classList.toggle('btn-secondary', type !== 'week');
   document.getElementById('compareYearBtn').classList.toggle('btn-primary', type === 'year');
@@ -1394,7 +1450,6 @@ async function loadComparison(type) {
   });
   html += `</div></div>`;
 
-  // Differences
   if (current && compare) {
     html += `<div class="card mt-8"><div class="card-title">Évolution</div>`;
     fields.forEach(f => {
@@ -1403,7 +1458,6 @@ async function loadComparison(type) {
     html += '</div>';
   }
 
-  // Extra data
   if (current?.soulState || compare?.soulState) {
     html += `<div class="card"><div class="card-title">États d'âme</div>`;
     if (current?.soulState) html += `<p class="text-sm"><strong>${shortDateFR(ds)}:</strong> ${current.soulState}</p>`;
@@ -1448,7 +1502,6 @@ async function loadHistory() {
   let entries = await dbGetAll();
   entries.sort((a, b) => b.date.localeCompare(a.date));
 
-  // Apply filters
   const f = historyFilters;
   if (f.from) entries = entries.filter(e => e.date >= f.from);
   if (f.to) entries = entries.filter(e => e.date <= f.to);
@@ -1554,10 +1607,8 @@ async function loadStats() {
   document.getElementById('statExDays').textContent = exDays;
   document.getElementById('statTotal').textContent = entries.length;
 
-  // Generate insights
   generateInsights(entries);
 
-  // Charts — last 30 days
   const sorted = [...entries].sort((a,b) => a.date.localeCompare(b.date));
   const last30 = sorted.slice(-30);
   drawChart('moodChart', last30.map(e => e.date), last30.map(e => e.mood), 'Humeur', '#4a7c2e', 1, 10);
@@ -1596,7 +1647,6 @@ function drawChart(canvasId, labels, data, label, color, minY, maxY) {
   function x(i) { return pad.left + (i / (data.length - 1)) * plotW; }
   function y(v) { return pad.top + plotH - ((v - mn) / range) * plotH; }
 
-  // Grid lines
   ctx.strokeStyle = '#e2d9ca';
   ctx.lineWidth = 0.5;
   for (let i = 0; i <= 4; i++) {
@@ -1606,7 +1656,6 @@ function drawChart(canvasId, labels, data, label, color, minY, maxY) {
     ctx.fillText((mx - (i/4)*range).toFixed(range > 20 ? 0 : 1), pad.left - 6, yy + 3);
   }
 
-  // X labels
   ctx.fillStyle = '#9a8b78'; ctx.font = '9px DM Sans'; ctx.textAlign = 'center';
   const step = Math.max(1, Math.floor(labels.length / 6));
   for (let i = 0; i < labels.length; i += step) {
@@ -1614,7 +1663,6 @@ function drawChart(canvasId, labels, data, label, color, minY, maxY) {
     ctx.fillText(d.getDate() + '/' + (d.getMonth()+1), x(i), H - 6);
   }
 
-  // Area fill
   ctx.beginPath();
   ctx.moveTo(x(0), y(data[0]));
   for (let i = 1; i < data.length; i++) ctx.lineTo(x(i), y(data[i]));
@@ -1627,7 +1675,6 @@ function drawChart(canvasId, labels, data, label, color, minY, maxY) {
   ctx.fillStyle = grad;
   ctx.fill();
 
-  // Line
   ctx.beginPath();
   ctx.moveTo(x(0), y(data[0]));
   for (let i = 1; i < data.length; i++) ctx.lineTo(x(i), y(data[i]));
@@ -1636,7 +1683,6 @@ function drawChart(canvasId, labels, data, label, color, minY, maxY) {
   ctx.lineJoin = 'round';
   ctx.stroke();
 
-  // Dots
   for (let i = 0; i < data.length; i++) {
     ctx.beginPath();
     ctx.arc(x(i), y(data[i]), 3, 0, Math.PI*2);
@@ -1655,7 +1701,6 @@ function generateInsights(entries) {
   const last7 = sorted.slice(-7);
   const prev7 = sorted.slice(-14, -7);
 
-  // Mood trend
   if (last7.length >= 3) {
     const avgRecent = last7.reduce((s,e) => s + (e.mood||0), 0) / last7.length;
     if (prev7.length >= 3) {
@@ -1667,14 +1712,12 @@ function generateInsights(entries) {
     if (avgRecent <= 3) insights.push({ type:'warning', title:'Humeur basse', text:'Ta moyenne des 7 derniers jours est faible. N\'hésite pas à en parler à quelqu\'un de confiance.' });
   }
 
-  // Exercise pattern
   if (last7.length >= 5) {
     const exDays = last7.filter(e => (e.exerciseTypes||[]).length > 0).length;
     if (exDays === 0) insights.push({ type:'warning', title:'Pas d\'exercice récent 🏃', text:'Aucun exercice cette semaine. Même 15 minutes de marche font une différence!' });
     else if (exDays >= 5) insights.push({ type:'good', title:'Régularité exercice 💪', text:`${exDays} jours d'exercice cette semaine. Excellent rythme!` });
   }
 
-  // Weight change
   const weights = sorted.filter(e => e.weight).slice(-14);
   if (weights.length >= 4) {
     const first = weights.slice(0, Math.floor(weights.length/2));
@@ -1687,7 +1730,6 @@ function generateInsights(entries) {
     }
   }
 
-  // Pain correlation with exercise
   const painEntries = sorted.filter(e => e.pain > 3).slice(-10);
   if (painEntries.length >= 3) {
     const zones = {};
@@ -1696,7 +1738,6 @@ function generateInsights(entries) {
     if (topZone) insights.push({ type:'warning', title:'Zone de douleur récurrente', text:`"${topZone[0]}" revient souvent dans tes douleurs (${topZone[1]} fois récemment).` });
   }
 
-  // Streaks
   const today = dateStr(new Date());
   let streak = 0;
   const d = new Date();
@@ -1754,7 +1795,7 @@ document.getElementById('importFile').addEventListener('change', async (e) => {
         const existing = await dbGet(entry.date);
         if (!existing) { await dbPut(entry); count++; }
       }
-    } else { // merge
+    } else {
       for (const entry of entries) {
         const existing = await dbGet(entry.date);
         if (!existing || new Date(entry.updatedAt) > new Date(existing.updatedAt || 0)) {
@@ -1825,7 +1866,6 @@ async function init() {
   await loadDay();
 }
 
-// Window resize redraw charts
 let resizeTimer;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
@@ -1836,7 +1876,6 @@ window.addEventListener('resize', () => {
 
 init();
 
-// Register Service Worker
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
@@ -1857,28 +1896,21 @@ async function updateAppBadge() {
 }
 
 async function checkAndNotify() {
-  // Update badge
   await updateAppBadge();
 
-  // Check if notification permission granted
   if (!('Notification' in window)) return;
   if (Notification.permission === 'default') {
-    // Ask permission on first visit (after small delay for UX)
-    setTimeout(() => {
-      Notification.requestPermission();
-    }, 3000);
+    setTimeout(() => { Notification.requestPermission(); }, 3000);
     return;
   }
   if (Notification.permission !== 'granted') return;
 
-  // If no entry today, show a reminder notification
   const today = dateStr(new Date());
   const entry = await dbGet(today);
   const lastNotif = localStorage.getItem('lastNotifDate');
 
   if (!entry && lastNotif !== today) {
     const hour = new Date().getHours();
-    // Only notify between 9h and 22h
     if (hour >= 9 && hour <= 22) {
       const messages = [
         "N'oublie pas de remplir ton journal aujourd'hui 📓",
@@ -1896,7 +1928,6 @@ async function checkAndNotify() {
           tag: 'daily-reminder',
           renotify: false
         }).catch(() => {
-          // Fallback to regular notification
           new Notification('Journal Intelligent v2', { body: msg, tag: 'daily-reminder' });
         });
       } else {
@@ -1907,7 +1938,6 @@ async function checkAndNotify() {
   }
 }
 
-// Run on load and on visibility change (when user comes back to app)
 checkAndNotify();
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') checkAndNotify();
