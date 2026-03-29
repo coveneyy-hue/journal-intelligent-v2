@@ -1,8 +1,10 @@
-const CACHE_NAME = 'journal-v2-cache-v2';
+const CACHE_NAME = 'journal-v2-cache-v4';
 const URLS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
+  './icon-192x192.png',
+  './icon-512x512.png',
   'https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap'
 ];
 
