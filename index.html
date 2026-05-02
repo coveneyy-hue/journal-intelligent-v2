@@ -246,7 +246,40 @@ input[type="range"]::-webkit-slider-thumb {
 .save-indicator.unsaved  { background:var(--coral-light); color:var(--coral); animation:pulse 1.5s infinite; }
 .save-indicator.empty    { background:var(--bg2); color:var(--text3); }
 .save-indicator.prefilled { background:var(--blue-light); color:var(--blue); }
+.save-indicator.locked   { background:var(--accent-light); color:var(--accent); }
 @keyframes pulse { 50%{opacity:.6} }
+
+/* Read-only / locked mode — disables editing on saved entries until user taps "Éditer" */
+.read-only .form-input,
+.read-only .form-textarea,
+.read-only .form-select {
+  background: var(--bg2);
+  color: var(--text2);
+  border-color: var(--bg3);
+  pointer-events: none;
+}
+.read-only .tag,
+.read-only .pain-zone {
+  pointer-events: none;
+  opacity: .85;
+  cursor: default;
+}
+.read-only input[type="range"] {
+  pointer-events: none;
+  opacity: .7;
+}
+.read-only input[type="range"]::-webkit-slider-thumb { cursor: default; }
+.read-only #saveBtn,
+.read-only .btn-primary.btn-block { display: none; }
+
+/* Edit-mode button */
+.btn-edit {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+}
+.btn-edit:hover { background: var(--accent2); }
+.btn-edit svg { stroke: #fff; }
 
 body { padding-top:calc(var(--safe-top) + 52px); }
 
@@ -419,6 +452,10 @@ canvas { width:100%!important; height:100%!important; }
       <p class="text-sm text-muted" id="todayDate"></p>
     </div>
     <div class="header-actions">
+      <button class="btn btn-sm btn-edit" id="editBtn" onclick="enableEdit()" style="display:none" title="Éditer cette journée">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Éditer
+      </button>
       <button class="btn btn-sm btn-secondary" onclick="openWizard()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
         Guidé
@@ -952,6 +989,7 @@ function dbClear() {
 // ============================================================
 let currentDate = new Date();
 let isDirty = false;
+let isReadOnly = false;
 let viewingEntryDate = null;
 let wizardStep = 0;
 const WIZARD_STEPS = ['humeur','poids','exercice','douleur','etat','habitudes','alimentation','supplements','chanson','watching','peur','motivation','notes'];
@@ -1068,11 +1106,13 @@ async function loadDay() {
   const entry = await dbGet(ds);
 
   if (entry) {
-    // Existing entry — load as-is
+    // Existing entry — load as-is and LOCK to prevent accidental edits.
     populateForm(entry);
+    setReadOnly(true);
     setDirty(false);
   } else {
-    // No entry for this day — try to prefill from last entry
+    // No entry for this day — unlock and try to prefill from last entry
+    setReadOnly(false);
     const lastEntry = await findLastEntry(ds);
     if (lastEntry) {
       populateForm(lastEntry);
@@ -1144,9 +1184,44 @@ function setDirty(v) {
     ind.className = 'save-indicator unsaved';
   } else {
     isDirty = false;
-    ind.textContent = '✓ Sauvé';
-    ind.className = 'save-indicator saved';
+    if (isReadOnly) {
+      ind.textContent = '🔒 Sauvé';
+      ind.className = 'save-indicator locked';
+    } else {
+      ind.textContent = '✓ Sauvé';
+      ind.className = 'save-indicator saved';
+    }
   }
+}
+
+// ============================================================
+// READ-ONLY / EDIT MODE
+// ============================================================
+// When a day already has a saved entry we lock the form to prevent accidental
+// edits. The user must tap the "Éditer" button (or open the guided wizard) to
+// switch back to edit mode.
+function setReadOnly(v) {
+  isReadOnly = !!v;
+  const page = document.getElementById('pageToday');
+  page.classList.toggle('read-only', isReadOnly);
+  document.getElementById('editBtn').style.display = isReadOnly ? '' : 'none';
+
+  // Disable form controls explicitly (defence in depth + keyboard / a11y).
+  const ids = ['mood','weight','exerciseDuration','exerciseKm','exerciseSteps',
+    'exerciseNotes','pain','soulState','food','song','watching','fear',
+    'motivation','notes'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = isReadOnly;
+  });
+
+  // Refresh save indicator (its text depends on isReadOnly).
+  if (!isDirty) setDirty(false);
+}
+
+function enableEdit() {
+  setReadOnly(false);
+  showToast('✏️ Mode édition');
 }
 
 function updateSliderDisplays() {
@@ -1193,6 +1268,7 @@ async function saveEntry() {
   const entry = collectEntry();
   await dbPut(entry);
   document.getElementById('prefillBanner').classList.add('hidden');
+  setReadOnly(true);
   setDirty(false);
   showToast('Sauvegardé ✓');
   updateAppBadge();
@@ -1282,6 +1358,8 @@ function closeModal(id) { document.getElementById(id).classList.remove('show'); 
 // WIZARD (GUIDED MODE)
 // ============================================================
 function openWizard() {
+  // Opening the guided mode is an explicit edit action — unlock first.
+  if (isReadOnly) setReadOnly(false);
   wizardStep = 0;
   renderWizard();
   openModal('wizardModal');
