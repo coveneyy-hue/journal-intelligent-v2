@@ -435,6 +435,12 @@ canvas { width:100%!important; height:100%!important; }
   <div class="status-left">📓 Journal v2</div>
   <div class="status-right">
     <span id="saveIndicator" class="save-indicator empty">— Nouveau</span>
+    <button class="btn-ghost btn-icon" onclick="copyPreviousDay()" title="Copier la journée précédente" id="copyPreviousBtn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+    </button>
+    <button class="btn-ghost btn-icon btn-edit" id="editBtn" onclick="enableEdit()" style="display:none" title="Éditer cette journée">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    </button>
     <button class="btn-ghost btn-icon" onclick="saveEntry()" title="Sauvegarder" id="saveBtn">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
     </button>
@@ -452,10 +458,6 @@ canvas { width:100%!important; height:100%!important; }
       <p class="text-sm text-muted" id="todayDate"></p>
     </div>
     <div class="header-actions">
-      <button class="btn btn-sm btn-edit" id="editBtn" onclick="enableEdit()" style="display:none" title="Éditer cette journée">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        Éditer
-      </button>
       <button class="btn btn-sm btn-secondary" onclick="openWizard()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
         Guidé
@@ -1063,13 +1065,12 @@ function jumpToDate() {
 }
 
 // ============================================================
-// FIND LAST ENTRY BEFORE A DATE
+// FIND PREVIOUS DAY ENTRY
 // ============================================================
-async function findLastEntry(beforeDateStr) {
-  const entries = await dbGetAll();
-  return entries
-    .filter(e => e.date < beforeDateStr)
-    .sort((a, b) => b.date.localeCompare(a.date))[0] || null;
+async function findPreviousDayEntry(currentDateStr) {
+  const previousDate = new Date(currentDateStr + 'T12:00:00');
+  previousDate.setDate(previousDate.getDate() - 1);
+  return await dbGet(dateStr(previousDate));
 }
 
 // ============================================================
@@ -1106,24 +1107,14 @@ async function loadDay() {
   const entry = await dbGet(ds);
 
   if (entry) {
-    // Existing entry — load as-is and LOCK to prevent accidental edits.
+    // Existing entry: load as-is and lock to prevent accidental edits.
     populateForm(entry);
     setReadOnly(true);
     setDirty(false);
   } else {
-    // No entry for this day — unlock and try to prefill from last entry
+    // No entry for this day: keep the form blank by default.
     setReadOnly(false);
-    const lastEntry = await findLastEntry(ds);
-    if (lastEntry) {
-      populateForm(lastEntry);
-      // Show prefill banner with source date
-      document.getElementById('prefillBannerText').textContent =
-        `Prérempli depuis le ${formatDateFR(lastEntry.date)} — modifie et sauvegarde`;
-      document.getElementById('prefillBanner').classList.remove('hidden');
-      setDirty('prefilled');
-    } else {
-      setDirty('empty');
-    }
+    setDirty('empty');
   }
 
   updateSliderDisplays();
@@ -1222,6 +1213,29 @@ function setReadOnly(v) {
 function enableEdit() {
   setReadOnly(false);
   showToast('✏️ Mode édition');
+}
+
+async function copyPreviousDay() {
+  const ds = dateStr(currentDate);
+  const previousEntry = await findPreviousDayEntry(ds);
+
+  if (!previousEntry) {
+    showToast('Aucune entrée pour la journée précédente');
+    return;
+  }
+
+  if (isReadOnly && !confirm('Remplacer les informations affichées par celles de la journée précédente?')) return;
+
+  setReadOnly(false);
+  populateForm(previousEntry);
+  document.getElementById('prefillBannerText').textContent =
+    `Copié depuis le ${formatDateFR(previousEntry.date)}. Sauvegarde pour appliquer à cette journée.`;
+  document.getElementById('prefillBanner').classList.remove('hidden');
+  setDirty(true);
+  updateSliderDisplays();
+  updateTiles();
+  updateCompletion();
+  showToast('Informations copiées');
 }
 
 function updateSliderDisplays() {
