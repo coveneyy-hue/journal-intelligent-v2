@@ -1337,15 +1337,45 @@ function toggleTag(el) {
 }
 
 function restoreTags(containerId, className, values) {
-  if (!values || !values.length) return;
   const container = document.getElementById(containerId);
   if (!container) return;
+
+  const selectedValues = Array.isArray(values) ? values.map(String) : [];
   const tags = container.getElementsByClassName(className);
   for (let i = 0; i < tags.length; i++) {
-    if (values.includes(tags[i].dataset.val)) {
-      tags[i].classList.add('active');
-    }
+    const tagValue = String(tags[i].dataset.val || '');
+    tags[i].classList.toggle('active', selectedValues.includes(tagValue));
   }
+}
+
+function getWizardTagsHtml(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return '';
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = container.innerHTML;
+  wrapper.querySelectorAll('.tag, .pain-zone').forEach(tag => tag.removeAttribute('onclick'));
+  return wrapper.innerHTML;
+}
+
+function bindWizardTags(sourceContainerId) {
+  const sourceContainer = document.getElementById(sourceContainerId);
+  const wizardContainer = document.getElementById('wizardContent');
+  if (!sourceContainer || !wizardContainer) return;
+
+  const selector = '.tag, .pain-zone';
+  wizardContainer.querySelectorAll(selector).forEach(wizardTag => {
+    wizardTag.addEventListener('click', () => {
+      const tagValue = wizardTag.dataset.val;
+      const isActive = !wizardTag.classList.contains('active');
+      wizardTag.classList.toggle('active', isActive);
+
+      const sourceTag = [...sourceContainer.querySelectorAll(selector)]
+        .find(tag => tag.dataset.val === tagValue);
+      if (sourceTag) sourceTag.classList.toggle('active', isActive);
+
+      onFieldChange();
+    });
+  });
 }
 
 function scrollToField(id) {
@@ -1409,7 +1439,7 @@ function renderWizard() {
         oninput="document.getElementById('weight').value=this.value;onFieldChange()">`;
   } else if (s === 'exercice') {
     html = `<p class="text-muted mb-8">As-tu fait de l'exercice?</p>
-      <div class="tags mb-8">${document.getElementById('exerciseTags').innerHTML}</div>
+      <div class="tags mb-8">${getWizardTagsHtml('exerciseTags')}</div>
       <div class="exercise-row">
         <div class="form-group"><label class="form-label">Min</label>
           <input type="number" class="form-input" value="${document.getElementById('exerciseDuration').value}" placeholder="30"
@@ -1432,19 +1462,19 @@ function renderWizard() {
           oninput="document.getElementById('pain').value=this.value;document.getElementById('wPainDisp').textContent=this.value;onFieldChange()">
         <div class="slider-labels"><span>Aucune</span><span>Modérée</span><span>Intense</span></div>
       </div>
-      <div class="pain-zones mt-8">${document.getElementById('painZones').innerHTML}</div>`;
+      <div class="pain-zones mt-8">${getWizardTagsHtml('painZones')}</div>`;
   } else if (s === 'etat') {
     html = `<p class="text-muted mb-8">Ton état d'âme?</p>
       <textarea class="form-textarea" rows="4" oninput="document.getElementById('soulState').value=this.value;onFieldChange()">${document.getElementById('soulState').value}</textarea>`;
   } else if (s === 'habitudes') {
     html = `<p class="text-muted mb-8">Quelles habitudes aujourd'hui?</p>
-      <div class="tags">${document.getElementById('habitTags').innerHTML}</div>`;
+      <div class="tags">${getWizardTagsHtml('habitTags')}</div>`;
   } else if (s === 'alimentation') {
     html = `<p class="text-muted mb-8">Qu'as-tu mangé?</p>
       <textarea class="form-textarea" rows="4" oninput="document.getElementById('food').value=this.value;onFieldChange()">${document.getElementById('food').value}</textarea>`;
   } else if (s === 'supplements') {
     html = `<p class="text-muted mb-8">Suppléments pris?</p>
-      <div class="tags supplement-tags">${document.getElementById('supplementTags').innerHTML}</div>`;
+      <div class="tags supplement-tags">${getWizardTagsHtml('supplementTags')}</div>`;
   } else if (s === 'chanson') {
     html = `<p class="text-muted mb-8">Ta chanson du jour?</p>
       <input type="text" class="form-input" value="${document.getElementById('song').value}" placeholder="Titre — Artiste"
@@ -1465,6 +1495,10 @@ function renderWizard() {
       <textarea class="form-textarea" rows="4" oninput="document.getElementById('notes').value=this.value;onFieldChange()">${document.getElementById('notes').value}</textarea>`;
   }
   content.innerHTML = html;
+  if (s === 'exercice') bindWizardTags('exerciseTags');
+  if (s === 'douleur') bindWizardTags('painZones');
+  if (s === 'habitudes') bindWizardTags('habitTags');
+  if (s === 'supplements') bindWizardTags('supplementTags');
 }
 
 function wizardNext() {
@@ -1667,6 +1701,7 @@ async function editEntryFromModal() {
   currentDate = new Date(viewingEntryDate + 'T12:00:00');
   navigate('today');
   await loadDay();
+  enableEdit();
 }
 
 async function deleteEntryFromModal() {
