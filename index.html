@@ -271,6 +271,8 @@ input[type="range"]::-webkit-slider-thumb {
 .read-only input[type="range"]::-webkit-slider-thumb { cursor: default; }
 .read-only #saveBtn,
 .read-only .btn-primary.btn-block { display: none; }
+body.read-only-mode #saveBtn,
+body.read-only-mode #copyPreviousBtn { display: none; }
 
 /* Edit-mode button */
 .btn-edit {
@@ -1195,7 +1197,21 @@ function setReadOnly(v) {
   isReadOnly = !!v;
   const page = document.getElementById('pageToday');
   page.classList.toggle('read-only', isReadOnly);
+  document.body.classList.toggle('read-only-mode', isReadOnly);
   document.getElementById('editBtn').style.display = isReadOnly ? '' : 'none';
+
+  const saveBtn = document.getElementById('saveBtn');
+  const copyPreviousBtn = document.getElementById('copyPreviousBtn');
+  if (saveBtn) {
+    saveBtn.style.display = isReadOnly ? 'none' : '';
+    saveBtn.disabled = isReadOnly;
+    saveBtn.setAttribute('aria-hidden', isReadOnly ? 'true' : 'false');
+  }
+  if (copyPreviousBtn) {
+    copyPreviousBtn.style.display = isReadOnly ? 'none' : '';
+    copyPreviousBtn.disabled = isReadOnly;
+    copyPreviousBtn.setAttribute('aria-hidden', isReadOnly ? 'true' : 'false');
+  }
 
   // Disable form controls explicitly (defence in depth + keyboard / a11y).
   const ids = ['mood','weight','exerciseDuration','exerciseKm','exerciseSteps',
@@ -1216,6 +1232,11 @@ function enableEdit() {
 }
 
 async function copyPreviousDay() {
+  if (isReadOnly) {
+    showToast('Active le mode édition avant de copier');
+    return;
+  }
+
   const ds = dateStr(currentDate);
   const previousEntry = await findPreviousDayEntry(ds);
 
@@ -1223,8 +1244,6 @@ async function copyPreviousDay() {
     showToast('Aucune entrée pour la journée précédente');
     return;
   }
-
-  if (isReadOnly && !confirm('Remplacer les informations affichées par celles de la journée précédente?')) return;
 
   setReadOnly(false);
   populateForm(previousEntry);
@@ -1279,6 +1298,11 @@ function collectEntry() {
 }
 
 async function saveEntry() {
+  if (isReadOnly) {
+    showToast('Active le mode édition avant de sauvegarder');
+    return;
+  }
+
   const entry = collectEntry();
   await dbPut(entry);
   document.getElementById('prefillBanner').classList.add('hidden');
