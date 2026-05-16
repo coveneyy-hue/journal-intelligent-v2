@@ -272,7 +272,16 @@ input[type="range"]::-webkit-slider-thumb {
 .read-only #saveBtn,
 .read-only .btn-primary.btn-block { display: none; }
 body.read-only-mode #saveBtn,
-body.read-only-mode #copyPreviousBtn { display: none; }
+body.read-only-mode #copyPreviousBtn,
+body.read-only-mode #cancelEditBtn { display: none; }
+
+/* Cancel edit button */
+.btn-cancel-edit {
+  background: var(--coral-light);
+  color: var(--coral);
+}
+.btn-cancel-edit:hover { background: #f7d5cc; }
+.btn-cancel-edit svg { stroke: var(--coral); }
 
 /* Edit-mode button */
 .btn-edit {
@@ -442,6 +451,9 @@ canvas { width:100%!important; height:100%!important; }
     </button>
     <button class="btn-ghost btn-icon btn-edit" id="editBtn" onclick="enableEdit()" style="display:none" title="Éditer cette journée">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    </button>
+    <button class="btn-ghost btn-icon btn-cancel-edit" id="cancelEditBtn" onclick="cancelEditMode()" style="display:none" title="Annuler les modifications">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
     <button class="btn-ghost btn-icon" onclick="saveEntry()" title="Sauvegarder" id="saveBtn">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -994,6 +1006,7 @@ function dbClear() {
 let currentDate = new Date();
 let isDirty = false;
 let isReadOnly = false;
+let currentEntryExists = false;
 let viewingEntryDate = null;
 let wizardStep = 0;
 const WIZARD_STEPS = ['humeur','poids','exercice','douleur','etat','habitudes','alimentation','supplements','chanson','watching','peur','motivation','notes'];
@@ -1108,6 +1121,8 @@ async function loadDay() {
 
   const entry = await dbGet(ds);
 
+  currentEntryExists = !!entry;
+
   if (entry) {
     // Existing entry: load as-is and lock to prevent accidental edits.
     populateForm(entry);
@@ -1202,6 +1217,7 @@ function setReadOnly(v) {
 
   const saveBtn = document.getElementById('saveBtn');
   const copyPreviousBtn = document.getElementById('copyPreviousBtn');
+  const cancelEditBtn = document.getElementById('cancelEditBtn');
   if (saveBtn) {
     saveBtn.style.display = isReadOnly ? 'none' : '';
     saveBtn.disabled = isReadOnly;
@@ -1211,6 +1227,12 @@ function setReadOnly(v) {
     copyPreviousBtn.style.display = isReadOnly ? 'none' : '';
     copyPreviousBtn.disabled = isReadOnly;
     copyPreviousBtn.setAttribute('aria-hidden', isReadOnly ? 'true' : 'false');
+  }
+  if (cancelEditBtn) {
+    const showCancel = !isReadOnly && currentEntryExists;
+    cancelEditBtn.style.display = showCancel ? '' : 'none';
+    cancelEditBtn.disabled = !showCancel;
+    cancelEditBtn.setAttribute('aria-hidden', showCancel ? 'false' : 'true');
   }
 
   // Disable form controls explicitly (defence in depth + keyboard / a11y).
@@ -1229,6 +1251,30 @@ function setReadOnly(v) {
 function enableEdit() {
   setReadOnly(false);
   showToast('✏️ Mode édition');
+}
+
+async function cancelEditMode() {
+  if (!currentEntryExists) return;
+  if (isDirty && !confirm('Annuler les modifications non sauvegardées?')) return;
+
+  const ds = dateStr(currentDate);
+  const savedEntry = await dbGet(ds);
+
+  if (!savedEntry) {
+    currentEntryExists = false;
+    setReadOnly(false);
+    setDirty('empty');
+    return;
+  }
+
+  document.getElementById('prefillBanner').classList.add('hidden');
+  populateForm(savedEntry);
+  setReadOnly(true);
+  setDirty(false);
+  updateSliderDisplays();
+  updateTiles();
+  updateCompletion();
+  showToast('Mode édition annulé');
 }
 
 async function copyPreviousDay() {
@@ -1305,6 +1351,7 @@ async function saveEntry() {
 
   const entry = collectEntry();
   await dbPut(entry);
+  currentEntryExists = true;
   document.getElementById('prefillBanner').classList.add('hidden');
   setReadOnly(true);
   setDirty(false);
